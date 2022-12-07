@@ -4,55 +4,79 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <SFML/System.hpp>
+#include <SFML/Graphics.hpp>
 
 // Classes
+
+class Constraint
+{
+  Constraint () {x = false; y = false;};
+  Constraint (x_input, y_input)
+    {
+      x = x_input;
+      y = y_input;
+    }
+
+  ~Constraint();
+
+  public:
+
+    bool x, y;
+};
 
 class Mass_Point
 { 
   public:
 
-    Mass_Point(float mass_input, bool isBound_input, sfml::Vector2F pos_input, sfml::Vector2F velocity_input);    
-    Mass_Point(float mass_input, sfml::Vector2F pos_input, sfml::Vector2F velocity_input);
-    Mass_Point(float mass_input, sfml::Vector2F pos_input, bool isBound_input);
-    Mass_Point(float mass_input, sfml::Vector2F pos_input)
+    Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint);    
+    Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input);
+    Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint);
+    Mass_Point(float mass_input, sf::Vector2f pos_input)
+    
+    ~Mass_Point();
+    
+    void compute_acceleration(sf::Vector2f force);
     void update();
-    
-    
   private:
     
     float mass = m;
-    sfml::CircleShape point;
+    sf::CircleShape point;
     float velocity;
     float acceleration;
-    bool isBound;
-    
+    Constraint constraint;
     
 };
 
 
 
 //ufficiale
-Mass_point::Mass_Point(float mass_input, bool isBound_input, sfml::Vector2F pos_input, sfml::Vector2F velocity_input);    
+Mass_point::Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint)   
 
-Mass_Point::Mass_Point(float mass_input, sfml::Vector2F pos_input, sfml::Vector2F velocity_input)
-{
-  Mass_point(mass_input, false, pos_input, velocity_input);
-}
 
-Mass_Point::Mass_Point(float mass_input, sfml::Vector2F pos_input, bool isBound_input)
+Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input)
 {
-  sfml::Vector2F velocity_input(0.0,0.0);
-  Mass_point(mass_input, isBound_input, pos_input, velocity_input);
-}
-
-Mass_Point::Mass_Point(float mass_input, sfml::Vector2F pos_input)
-{
-  sfml::Vector2F velocity_input(0.0,0.0);
-  Mass_point(mass_input, false, pos_input, 0); //correggere questo 0
+  Constraint constraint_input(false, false);
+  Mass_point(mass_input, pos_input, velocity_input, constraint_input);
 }
 
 
+Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint)
+{
+  sf::Vector2f velocity_input(0.0,0.0);
+  Mass_point(mass_input, pos_input, velocity_input, constraint);
+}
 
+    
+Mass_Point(float mass_input, sf::Vector2f pos_input)
+{
+  Constraint constraint_input(false, false;)
+  sf::Vector2f velocity_input(0.0,0.0);
+  Mass_point(mass_input, pos_input, velocity_input, constraint_input);
+}
+
+
+/*
 class Spring ()
 {
   public:
@@ -69,9 +93,6 @@ class Spring ()
 
     float apply_force(Mass_Point m);
 
-
-    
-
 };
 
 Spring::apply(Mass_Point &m1, Mass_Point &m2)
@@ -86,7 +107,9 @@ class Gravity ()
   private:
     float g = 9.81;
 };
+*/
 
+/*
 class rope ()
 {
   
@@ -99,8 +122,17 @@ class rope ()
     float total_mass;
 
 }
+*/
 
-
+int main(int argc, char const *argv[])
+{
+  for (;;)
+  {
+    /* code */
+  }
+  
+  return 0;
+}
 
 
 

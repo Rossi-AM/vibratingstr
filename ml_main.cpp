@@ -34,9 +34,8 @@ class Mass_Point
 //    Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint);
 //    Mass_Point(float mass_input, sf::Vector2f pos_input);
     
-    void clear_acceleration() 
+    void clear_acceleration();
     void set_acceleration(sf::Vector2f acceleration);
-    void get_position()
     void update(sf::Time time);
     float get_mass();
     
@@ -74,17 +73,16 @@ class Spring
 class Gravity
 {
   public:
-    Gravity(std::vector<Mass_Point> & mass_point_input)
+    Gravity(std::vector<Mass_Point> *mass_point_input)
     {
-      for(auto i: mass_point)
-        points->push_back(i);
+        points = mass_point_input;
     }
 
     void apply();
 
   private:
     const float g = 9.81;
-    std::vector<Mass_Point> * points;
+    std::vector<Mass_Point> *points;
 };
 
 
@@ -113,10 +111,10 @@ int main(int argc, char const *argv[])
 
   std::vector<Mass_Point> mass_point;
   std::vector<Spring> spring;
-  int mass_point_num = 1000;
+  int mass_point_num = 10;
   int mass = 1;
   float k = 100;
-  Gravity gravity(* mass_point);
+
   
   sf::Time time;
   sf::Clock clock;
@@ -131,7 +129,7 @@ int main(int argc, char const *argv[])
     Mass_Point temp(mass, pos_input, vel_input, constraint_input);
 
     mass_point.push_back(temp);
-
+    std::cout << "DEBUG\n";
     /*
     if(i==0) continue;
     else
@@ -143,11 +141,14 @@ int main(int argc, char const *argv[])
     */
   }
   
+  Gravity gravity(&mass_point);
   clock.restart();
 
+    int mestruo = 0;
   while(window.isOpen())
   {
     time = clock.getElapsedTime();
+    clock.restart();
 
     sf::Event event;
 
@@ -155,11 +156,17 @@ int main(int argc, char const *argv[])
       if(event.type == sf::Event::Closed) 
         window.close();
 
-    gravity.apply()
+    gravity.apply();
     
-    for(auto i: mass_point)
-      i.update(time);
+    
+    for(int i = 0; i < mass_point.size(); ++i)
+    {
+      mass_point.at(i).update(time);
+//      std::cout << "Ciclo " << mestruo << " Punto " << i << " " << mass_point.at(i).point.getPosition().x << " " << mass_point.at(i).point.getPosition().y << "\n";
+    }
 
+     mestruo++;
+    
     window.clear();
     for(auto i: mass_point)
       window.draw(i.point);
@@ -223,25 +230,34 @@ Mass_Point::clear_acceleration()
   acceleration.y = 0.0;
 }
 
+void
 Mass_Point::set_acceleration(sf::Vector2f acceleration_input)
 {
-  acceleration += acceleration_input;
+  acceleration.x += acceleration_input.x;
+  acceleration.y += acceleration_input.y;
 }
 
+float
 Mass_Point::get_mass()
 {
   return mass;
 }
 
-Mass_point::update(sf::Time time)
+void
+Mass_Point::update(sf::Time time)
 {
-  velocity.x += (acceleration.x * time.asMillisecond()); 
-  velocity.y += (acceleration.y * time.asMillisecond()); 
+
+  sf::Int64 msec = time.asMicroseconds();
+
+  std::cout << std::endl << "DEBUG" << std::endl << acceleration.y << ' ' << msec << std::endl;
+
+  velocity.x += (acceleration.x * time.asMilliseconds()); 
+  velocity.y += (acceleration.y * time.asMilliseconds()); 
+
+  sf::Vector2f new_position = point.getPosition();
   
-  sf::vector2f new_position = point.getPosition();
-  
-  new_position.x += (velocity.x * time.asMillisecond());
-  new_position.y += (velocity.y * time.asMillisecond());
+  new_position.x += (velocity.x * time.asMilliseconds());
+  new_position.y += (velocity.y * time.asMilliseconds());
 
   point.setPosition(new_position);
 
@@ -254,22 +270,19 @@ Mass_point::update(sf::Time time)
 void
 Gravity::apply()
 {
-  for(auto i: mass_point)
+  for(auto i: *points)
   {
     sf::Vector2f acceleration_input(0.0 , g);
-    i->set_acceleration(acceleration_input);
+    i.set_acceleration(acceleration_input);
   }
 }
 
 //?______________________________________________________________________________________________________________________________________________________________
 //? spring
-
+/*
 Spring::Spring(int k_input)
 {
   k = k_input;
   rest_lenght = window.getSize().x/(mass_point_num - 1)
 }
-
-git add .
-git commit -m "messaggio"
-git push
+*/

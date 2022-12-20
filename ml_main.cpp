@@ -31,9 +31,9 @@ class Mass_Point
 
     Mass_Point() {};
     Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint/*, float radius, std::size_t pointCount*/);    
-//    Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input);
-//    Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint);
-//    Mass_Point(float mass_input, sf::Vector2f pos_input);
+    Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input);
+    Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint);
+    Mass_Point(float mass_input, sf::Vector2f pos_input);
 
 
 
@@ -51,6 +51,7 @@ class Mass_Point
     sf::Vector2f acceleration;
     Constraint constraint;
     
+    void builder(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint_input);
 };
 
 
@@ -193,9 +194,35 @@ int main(int argc, char const *argv[])
 //?______________________________________________________________________________________________________________________________________________________________
 //? mass point
 
-//ufficiale
 Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint_input/*, float radius, std::size_t pointCount*/)
 {  
+  builder(mass_input, pos_input, velocity_input, constraint_input);
+}   
+
+
+Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input)
+ {
+   Constraint constraint_input(false, false);
+   builder(mass_input, pos_input, velocity_input, constraint_input);
+ }
+
+Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint)
+ {
+   sf::Vector2f velocity_input(0.0,0.0);
+   builder(mass_input, pos_input, velocity_input, constraint);
+ }
+
+    
+Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input)
+ {
+   Constraint constraint_input(false, false);
+   sf::Vector2f velocity_input(0.0, 0.0);
+   builder(mass_input, pos_input, velocity_input, constraint_input);
+ }
+
+void
+Mass_Point::builder(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint_input)
+{
   point.setRadius(3.0/*radius*/);
   point.setPointCount(30/*pointCount*/);
   point.setOrigin(1.5, 1.5);
@@ -206,29 +233,7 @@ Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f ve
   acceleration.x = 0;
   acceleration.y = 0;
   constraint = constraint_input;
-}   
-
-/*
-Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input)
- {
-   Constraint constraint_input(false, false);
-   Mass_Point (mass_input, pos_input, velocity_input, constraint_input);
- }
-
-Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint)
- {
-   sf::Vector2f velocity_input(0.0,0.0);
-   Mass_Point(mass_input, pos_input, velocity_input, constraint);
- }
-
-    
-Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input)
- {
-   Constraint constraint_input(false, false);
-   sf::Vector2f velocity_input(0.0, 0.0);
-   Mass_Point(mass_input, pos_input, velocity_input, constraint_input);
- }
-*/
+}
 
 void
 Mass_Point::clear_acceleration()

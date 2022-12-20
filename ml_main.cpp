@@ -29,11 +29,14 @@ class Mass_Point
 { 
   public:
 
+    Mass_Point() {};
     Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint/*, float radius, std::size_t pointCount*/);    
 //    Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input);
 //    Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint);
 //    Mass_Point(float mass_input, sf::Vector2f pos_input);
-    
+
+
+
     void clear_acceleration();
     void set_acceleration(sf::Vector2f acceleration);
     void update(sf::Time time);
@@ -72,17 +75,22 @@ class Spring
 
 class Gravity
 {
+  private:
+    const float g = 9.81 / 100000000000;
+    std::vector<Mass_Point*> points;
+
   public:
     Gravity(std::vector<Mass_Point> *mass_point_input)
     {
-        points = mass_point_input;
+      for(int i=0; i<mass_point_input->size(); ++i)
+      {
+        Mass_Point *temp;
+        temp = &mass_point_input->at(i);
+        points.push_back(temp);
+      }
     }
 
     void apply();
-
-  private:
-    const float g = 9.81;
-    std::vector<Mass_Point> *points;
 };
 
 
@@ -129,7 +137,6 @@ int main(int argc, char const *argv[])
     Mass_Point temp(mass, pos_input, vel_input, constraint_input);
 
     mass_point.push_back(temp);
-    std::cout << "DEBUG\n";
     /*
     if(i==0) continue;
     else
@@ -249,15 +256,15 @@ Mass_Point::update(sf::Time time)
 
   sf::Int64 msec = time.asMicroseconds();
 
-  std::cout << std::endl << "DEBUG" << std::endl << acceleration.y << ' ' << msec << std::endl;
-
-  velocity.x += (acceleration.x * time.asMilliseconds()); 
-  velocity.y += (acceleration.y * time.asMilliseconds()); 
+  velocity.x += (acceleration.x * time.asMicroseconds()); 
+  velocity.y += (acceleration.y * time.asMicroseconds()); 
 
   sf::Vector2f new_position = point.getPosition();
   
-  new_position.x += (velocity.x * time.asMilliseconds());
-  new_position.y += (velocity.y * time.asMilliseconds());
+  new_position.x += (velocity.x * time.asMicroseconds());
+  new_position.y += (velocity.y * time.asMicroseconds());
+
+//  std::cout << std::endl << "DEBUG" << std::endl << new_position.y << ' ' << msec << std::endl;
 
   point.setPosition(new_position);
 
@@ -270,10 +277,10 @@ Mass_Point::update(sf::Time time)
 void
 Gravity::apply()
 {
-  for(auto i: *points)
+  for(int i=0; i<points.size(); ++i)
   {
     sf::Vector2f acceleration_input(0.0 , g);
-    i.set_acceleration(acceleration_input);
+    points.at(i)->set_acceleration(acceleration_input);
   }
 }
 

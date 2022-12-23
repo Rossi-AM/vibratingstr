@@ -7,20 +7,22 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
+#define DEFAULT_VEL sf::Vector2f(0.0f, 0.0f)
+#define DEFAULT_CONSTRAINT Constraint()
+
 // Classes
 
 class Constraint
 {
   public:
-    Constraint () {x = false; y = false;};
-    Constraint (bool x_input, bool y_input)
+    Constraint() { x = false; y = false; };
+    Constraint(bool x, bool y)
       {
-        x = x_input;
-        y = y_input;
+        this->x = x;
+        this->y = y;
       }
 
     //~Constraint();
-
 
     bool x, y;
 };
@@ -29,18 +31,18 @@ class Mass_Point
 { 
   public:
 
-    Mass_Point() {};
-    Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint/*, float radius, std::size_t pointCount*/);    
-    Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input);
-    Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint);
-    Mass_Point(float mass_input, sf::Vector2f pos_input);
+    Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint/*, float radius, std::size_t pointCount*/);    
+    Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity);
+    Mass_Point(float mass, sf::Vector2f position, Constraint constraint);
+    Mass_Point(float mass, sf::Vector2f position);
 
 
 
     void clear_acceleration();
     void set_acceleration(sf::Vector2f acceleration);
     void update(sf::Time time);
-    float get_mass();
+    float get_mass() { return mass; };
+    sf::Vector2f get_position() { return point.getPosition(); };
     
     sf::CircleShape point;
 
@@ -51,7 +53,25 @@ class Mass_Point
     sf::Vector2f acceleration;
     Constraint constraint;
     
-    void builder(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint_input);
+    void builder(float mass, sf::Vector2f pos, sf::Vector2f velocity, Constraint constraint);
+};
+
+
+class Gravity
+{
+  public:
+
+    Gravity(std::vector<Mass_Point> *mass_point);
+
+
+    void apply();
+  
+
+  private:
+
+    const float g = 9.81 / 100000000000;
+    std::vector<Mass_Point*> points;
+
 };
 
 
@@ -59,41 +79,31 @@ class Spring
 {
   public:
 
-    Spring(int k_input);
- 
+    Spring(float k, Mass_Point* m1, Mass_Point* m2) 
+      { builder(k, m1, m2, 0); }
+    Spring(float k, Mass_Point* m1, Mass_Point* m2, int rest_lenght) 
+      { builder(k, m1, m2, rest_lenght); }
+    Spring(float k, Mass_Point* m1, Mass_Point* m2, bool at_rest) 
+      { builder(k, m1, m2, lenght(m1, m2)); }
+
 
     void apply();
+    void set_rest_lenght(float rest_lenght) { this->rest_lenght = rest_lenght;};
+
 
   private: 
     
-    void update_lenght();
     float k;
-    float lenght;
     float rest_lenght;
     Mass_Point *m1, *m2;
+
+    void builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_lenght);
+
+    float lenght();
+    float lenght(Mass_Point* m1, Mass_Point* m2);
+    sf::Vector2f vector_lenght();                                                   // output the distance in sf::Vector2f between the extremis of the spring
+    sf::Vector2f vector_lenght(Mass_Point* m1, Mass_Point* m2);                     // output the distance in sf::Vector2f between the arguments
 };
-
-
-class Gravity
-{
-  private:
-    const float g = 9.81 / 100000000000;
-    std::vector<Mass_Point*> points;
-
-  public:
-    Gravity(std::vector<Mass_Point> *mass_point_input)
-    {
-      for(int i=0; i<mass_point_input->size(); ++i)
-      {
-        Mass_Point *temp;
-        temp = &mass_point_input->at(i);
-        points.push_back(temp);
-      }
-    }
-
-    void apply();
-};
-
 
 /*
 class rope ()
@@ -116,26 +126,21 @@ class rope ()
 int main(int argc, char const *argv[])
 {
 
-  sf::RenderWindow window(sf::VideoMode(1000, 600), "use this to hang up");
+  sf::RenderWindow window(sf::VideoMode(1000, 600), "when will ale-senpai notice me");
 
   std::vector<Mass_Point> mass_point;
-  std::vector<Spring> spring;
   int mass_point_num = 10;
   int mass = 1;
   float k = 100;
-
   
   sf::Time time;
   sf::Clock clock;
   
-  sf::Vector2f vel_input(0.0, 0.0);
-  Constraint constraint_input(false, false);
-  
   for(int i = 0; i < mass_point_num; ++i)
   {
-    sf::Vector2f pos_input((window.getSize().x/(mass_point_num - 1))*i, window.getSize().y/2);
+    sf::Vector2f position((window.getSize().x/(mass_point_num - 1))*i, window.getSize().y/2);
 
-    Mass_Point temp(mass, pos_input, vel_input, constraint_input);
+    Mass_Point temp(mass, position);
 
     mass_point.push_back(temp);
     /*
@@ -152,7 +157,6 @@ int main(int argc, char const *argv[])
   Gravity gravity(&mass_point);
   clock.restart();
 
-    int mestruo = 0;
   while(window.isOpen())
   {
     time = clock.getElapsedTime();
@@ -170,17 +174,13 @@ int main(int argc, char const *argv[])
     for(int i = 0; i < mass_point.size(); ++i)
     {
       mass_point.at(i).update(time);
-//      std::cout << "Ciclo " << mestruo << " Punto " << i << " " << mass_point.at(i).point.getPosition().x << " " << mass_point.at(i).point.getPosition().y << "\n";
     }
-
-     mestruo++;
     
     window.clear();
     for(auto i: mass_point)
       window.draw(i.point);
     window.display();
   }
-  std::cout << "Hello Macchia!\n";
   return 0;
 }
 
@@ -194,45 +194,44 @@ int main(int argc, char const *argv[])
 //?______________________________________________________________________________________________________________________________________________________________
 //? mass point
 
-Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint_input/*, float radius, std::size_t pointCount*/)
+Mass_Point::Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint/*, float radius, std::size_t pointCount*/)
 {  
-  builder(mass_input, pos_input, velocity_input, constraint_input);
+  builder(mass, position, velocity, constraint);
 }   
 
 
-Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input)
+Mass_Point::Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity)
  {
-   Constraint constraint_input(false, false);
-   builder(mass_input, pos_input, velocity_input, constraint_input);
+   Constraint constraint(false, false);
+   builder(mass, position, velocity, constraint);
  }
 
-Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input, Constraint constraint)
+Mass_Point::Mass_Point(float mass, sf::Vector2f position, Constraint constraint)
  {
-   sf::Vector2f velocity_input(0.0,0.0);
-   builder(mass_input, pos_input, velocity_input, constraint);
+   sf::Vector2f velocity(0.0, 0.0);
+   builder(mass, position, velocity, constraint);
  }
 
     
-Mass_Point::Mass_Point(float mass_input, sf::Vector2f pos_input)
+Mass_Point::Mass_Point(float mass, sf::Vector2f position)
  {
-   Constraint constraint_input(false, false);
-   sf::Vector2f velocity_input(0.0, 0.0);
-   builder(mass_input, pos_input, velocity_input, constraint_input);
+   Constraint constraint(false, false);
+   sf::Vector2f velocity(0.0, 0.0);
+   builder(mass, position, velocity, constraint);
  }
 
 void
-Mass_Point::builder(float mass_input, sf::Vector2f pos_input, sf::Vector2f velocity_input, Constraint constraint_input)
+Mass_Point::builder(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint)
 {
   point.setRadius(3.0/*radius*/);
   point.setPointCount(30/*pointCount*/);
   point.setOrigin(1.5, 1.5);
-  point.setPosition(pos_input);
+  point.setPosition(position);
 
-  mass = mass_input;
-  velocity = velocity_input;
-  acceleration.x = 0;
-  acceleration.y = 0;
-  constraint = constraint_input;
+  this->mass = mass;
+  this->velocity = velocity;
+  clear_acceleration();
+  this->constraint = constraint;
 }
 
 void
@@ -243,33 +242,31 @@ Mass_Point::clear_acceleration()
 }
 
 void
-Mass_Point::set_acceleration(sf::Vector2f acceleration_input)
+Mass_Point::set_acceleration(sf::Vector2f acceleration)
 {
-  acceleration.x += acceleration_input.x;
-  acceleration.y += acceleration_input.y;
-}
-
-float
-Mass_Point::get_mass()
-{
-  return mass;
+  this->acceleration.x += acceleration.x;
+  this->acceleration.y += acceleration.y;
 }
 
 void
 Mass_Point::update(sf::Time time)
 {
+  if(constraint.x)
+    velocity.x = 0.0;
+  else
+    velocity.x += (acceleration.x * time.asMicroseconds()); 
+  
+  if(constraint.y)
+    velocity.y = 0.0;
+  else
+    velocity.y += (acceleration.y * time.asMicroseconds()); 
+  
 
-  sf::Int64 msec = time.asMicroseconds();
-
-  velocity.x += (acceleration.x * time.asMicroseconds()); 
-  velocity.y += (acceleration.y * time.asMicroseconds()); 
-
+  
   sf::Vector2f new_position = point.getPosition();
   
   new_position.x += (velocity.x * time.asMicroseconds());
   new_position.y += (velocity.y * time.asMicroseconds());
-
-//  std::cout << std::endl << "DEBUG" << std::endl << new_position.y << ' ' << msec << std::endl;
 
   point.setPosition(new_position);
 
@@ -279,22 +276,55 @@ Mass_Point::update(sf::Time time)
 //?______________________________________________________________________________________________________________________________________________________________
 //? gravity
 
+Gravity::Gravity(std::vector<Mass_Point> *mass_point)
+{
+  for(int i=0; i<mass_point->size(); ++i)
+  {
+    Mass_Point *temp;
+    temp = &mass_point->at(i);
+    points.push_back(temp);
+    
+  }
+}
+
 void
 Gravity::apply()
 {
   for(int i=0; i<points.size(); ++i)
   {
-    sf::Vector2f acceleration_input(0.0 , g);
-    points.at(i)->set_acceleration(acceleration_input);
+    sf::Vector2f acceleration(0.0 , g);
+    points.at(i)->set_acceleration(acceleration);
   }
 }
 
 //?______________________________________________________________________________________________________________________________________________________________
 //? spring
-/*
-Spring::Spring(int k_input)
+
+void
+Spring::builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_lenght)
 {
-  k = k_input;
-  rest_lenght = window.getSize().x/(mass_point_num - 1)
+  this->k = k;
+  this->m1 = m1;
+  this->m2 = m2;
+  set_rest_lenght(rest_lenght);
 }
-*/
+
+sf::Vector2f
+Spring::vector_lenght() { return vector_lenght(m1, m2); }
+
+sf::Vector2f
+Spring::vector_lenght(Mass_Point* m1, Mass_Point* m2)
+{
+  sf::Vector2f lenght;
+  lenght.x = sqrt( pow( (m1->get_position().x - m2->get_position().x) , 2) );
+  lenght.y = sqrt( pow( (m1->get_position().y - m2->get_position().y) , 2) );
+
+  return lenght;
+}
+
+void
+Spring::apply()
+{
+  sf::Vector2f force;
+
+}

@@ -39,7 +39,7 @@ class Mass_Point
 
 
     void clear_acceleration();
-    void set_acceleration(sf::Vector2f acceleration);
+    void update_accelleration(sf::Vector2f acceleration);
     void update(sf::Time time);
     float get_mass() { return mass; };
     sf::Vector2f get_position() { return point.getPosition(); };
@@ -155,6 +155,7 @@ int main(int argc, char const *argv[])
   }
   
   Gravity gravity(&mass_point);
+  Spring spring(k, &mass_point.at(5), &mass_point.at(6));
   clock.restart();
 
   while(window.isOpen())
@@ -169,6 +170,7 @@ int main(int argc, char const *argv[])
         window.close();
 
     gravity.apply();
+    spring.apply();
     
     
     for(int i = 0; i < mass_point.size(); ++i)
@@ -242,7 +244,7 @@ Mass_Point::clear_acceleration()
 }
 
 void
-Mass_Point::set_acceleration(sf::Vector2f acceleration)
+Mass_Point::update_accelleration(sf::Vector2f acceleration)
 {
   this->acceleration.x += acceleration.x;
   this->acceleration.y += acceleration.y;
@@ -293,7 +295,7 @@ Gravity::apply()
   for(int i=0; i<points.size(); ++i)
   {
     sf::Vector2f acceleration(0.0 , g);
-    points.at(i)->set_acceleration(acceleration);
+    points.at(i)->update_accelleration(acceleration);
   }
 }
 
@@ -322,9 +324,46 @@ Spring::vector_lenght(Mass_Point* m1, Mass_Point* m2)
   return lenght;
 }
 
+float
+Spring::lenght() { return lenght(m1, m2); }
+
+float
+Spring::lenght(Mass_Point* m1, Mass_Point* m2)
+{
+  return sqrt( pow( (m1->get_position().x - m2->get_position().x) , 2) +
+               pow( (m1->get_position().y - m2->get_position().y) , 2) );
+}
+
 void
 Spring::apply()
 {
   sf::Vector2f force;
+  sf::Vector2f a1, a2;
+  sf::Vector2f vector_lenght = Spring::vector_lenght();
+  float lenght = Spring::lenght();
 
+  force.x = (lenght - rest_lenght) * k * (vector_lenght.x / lenght);
+  force.y = (lenght - rest_lenght) * k * (vector_lenght.y / lenght);
+
+  a1 = (force / m1->get_mass());
+  a2 = ((-force) / m2->get_mass());
+
+  a1.x /= 100000000000;
+  a1.y /= 100000000000;
+
+
+  if(m1->get_position().x > m2->get_position().x)
+  {
+    a1.x *= (-1); 
+    a2.x *= (-1); 
+  }
+
+  if(m1->get_position().y > m2->get_position().y)
+  {
+    a1.y *= (-1); 
+    a2.y *= (-1); 
+  } 
+
+  m1->update_accelleration(a1);
+  m2->update_accelleration(a2);
 }

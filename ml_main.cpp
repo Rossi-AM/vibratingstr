@@ -4,11 +4,13 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <stringstream>
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
 #define DEFAULT_VEL sf::Vector2f(0.0f, 0.0f)
 #define DEFAULT_CONSTRAINT Constraint()
+#define NORMAL_POS 800;
 
 // Classes
 
@@ -40,7 +42,7 @@ class Mass_Point
 
     void clear_acceleration();
     void update_accelleration(sf::Vector2f acceleration);
-    void update(sf::Time time);
+    void update(sf::Time time, float time_multiplier);
     float get_mass() { return mass; };
     sf::Vector2f get_position() { return point.getPosition(); };
     
@@ -52,7 +54,9 @@ class Mass_Point
     sf::Vector2f velocity;
     sf::Vector2f acceleration;
     Constraint constraint;
-    
+
+    void print_and_clear_buffer(stringstream &ss);
+
     void builder(float mass, sf::Vector2f pos, sf::Vector2f velocity, Constraint constraint);
 };
 
@@ -69,7 +73,7 @@ class Gravity
 
   private:
 
-    const float g = 9.81 / 100000000000;
+    const float g = 9.81;
     std::vector<Mass_Point*> points;
 
 };
@@ -126,6 +130,10 @@ class rope ()
 int main(int argc, char const *argv[])
 {
 
+
+
+  sf::Clock global_time;
+
   sf::RenderWindow window(sf::VideoMode(1000, 600), "when will ale-senpai notice me");
 
   std::vector<Mass_Point> mass_point;
@@ -175,7 +183,7 @@ int main(int argc, char const *argv[])
     
     for(int i = 0; i < mass_point.size(); ++i)
     {
-      mass_point.at(i).update(time);
+      mass_point.at(i).update(time, 1);
     }
     
     window.clear();
@@ -251,28 +259,44 @@ Mass_Point::update_accelleration(sf::Vector2f acceleration)
 }
 
 void
-Mass_Point::update(sf::Time time)
+Mass_Point::update(sf::Time time, float time_multiplier)
 {
+  float relative_time = (time.asMicroseconds() / 1000000) * time_multiplier;
+  
+  stringstream sout;
+  
   if(constraint.x)
     velocity.x = 0.0;
   else
-    velocity.x += (acceleration.x * time.asMicroseconds()); 
+    velocity.x += (acceleration.x * relative_time); 
   
   if(constraint.y)
     velocity.y = 0.0;
   else
-    velocity.y += (acceleration.y * time.asMicroseconds()); 
+    velocity.y += (acceleration.y * relative_time); 
   
 
   
   sf::Vector2f new_position = point.getPosition();
   
-  new_position.x += (velocity.x * time.asMicroseconds());
-  new_position.y += (velocity.y * time.asMicroseconds());
+  new_position.x += (velocity.x * relative_time) * NORMAL_POS;
+  new_position.y += (velocity.y * relative_time) * NORMAL_POS;
 
   point.setPosition(new_position);
 
+  // Printing
+  sout << new_position.x << "\t" << new_position.y << "\t" << velocity.x << "\t" << velocity.y << "\t" << acceleration.x << "\t" << acceleration.y << "\n";
   clear_acceleration();
+}
+
+
+void 
+Mass_Point::print_and_clear_buffer(stringstream &ss)
+{
+  cout << ss.str();
+  fstream outfile("results.dat", ios::app);
+  outfile << ss.str();
+  ss.str("");
 }
 
 //?______________________________________________________________________________________________________________________________________________________________
@@ -318,8 +342,10 @@ sf::Vector2f
 Spring::vector_lenght(Mass_Point* m1, Mass_Point* m2)
 {
   sf::Vector2f lenght;
-  lenght.x = sqrt( pow( (m1->get_position().x - m2->get_position().x) , 2) );
-  lenght.y = sqrt( pow( (m1->get_position().y - m2->get_position().y) , 2) );
+  lenght.x = abs(m1->get_position().x / NORMAL_POS 
+               - m2->get_position().x / NORMAL_POS);
+  lenght.y = abs(m1->get_position().y / NORMAL_POS
+               - m2->get_position().y / NORMAL_POS);
 
   return lenght;
 }
@@ -330,8 +356,10 @@ Spring::lenght() { return lenght(m1, m2); }
 float
 Spring::lenght(Mass_Point* m1, Mass_Point* m2)
 {
-  return sqrt( pow( (m1->get_position().x - m2->get_position().x) , 2) +
-               pow( (m1->get_position().y - m2->get_position().y) , 2) );
+  return sqrt( pow(m1->get_position().x / NORMAL_POS 
+                 - m2->get_position().x / NORMAL_POS, 2) 
+             + pow(m1->get_position().y / NORMAL_POS 
+                 - m2->get_position().y / NORMAL_POS, 2));
 }
 
 void
@@ -347,10 +375,6 @@ Spring::apply()
 
   a1 = (force / m1->get_mass());
   a2 = ((-force) / m2->get_mass());
-
-  a1.x /= 100000000000;
-  a1.y /= 100000000000;
-
 
   if(m1->get_position().x > m2->get_position().x)
   {

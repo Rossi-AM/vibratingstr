@@ -48,6 +48,13 @@ class Mass_Point
     sf::Vector2f get_velocity() { return velocity; };
     
     sf::Vector2f get_position() { return point.getPosition(); };
+
+    void set_constraint(Constraint constraint) { this->constraint = constraint; };
+    void set_constraint(bool x, bool y)
+      {
+        this->constraint.x = x; 
+        this->constraint.y = y;
+      };
     
     void update(sf::Time time, float time_multiplier, sf::Time global_time);
 
@@ -142,7 +149,8 @@ int main(int argc, char const *argv[])
   std::vector<Mass_Point> mass_point;
   int mass_point_num = 10;
   int mass = 1;
-  float k = 100;
+  float k = 500;
+  float time_multiplier = 1;
   
   sf::Time global_time;
   sf::Time time;
@@ -151,14 +159,25 @@ int main(int argc, char const *argv[])
   for(int i = 0; i < mass_point_num; ++i)
   {
     sf::Vector2f position((window.getSize().x/(mass_point_num - 1))*i, window.getSize().y/2);
+    Constraint constraint(true, false);
 
-    Mass_Point temp(mass, position);
+    Mass_Point temp(mass, position, constraint);
 
     mass_point.push_back(temp);
   }
   
   Gravity gravity(&mass_point);
-  Spring spring(k, &mass_point.at(5), &mass_point.at(6));
+  std::vector<Spring> springs;
+
+  for(int i=0; i<mass_point_num-1; ++i)
+  {
+    Spring spring(k, &mass_point.at(i), &mass_point.at(i+1));
+    springs.push_back(spring);
+  }
+  
+  mass_point.at(0).set_constraint(true, true);
+  mass_point.at(mass_point_num-1).set_constraint(true, true);
+
   clock.restart();
 
   while(window.isOpen())
@@ -175,13 +194,12 @@ int main(int argc, char const *argv[])
         window.close();
 
     gravity.apply();
-    spring.apply();
     
+    for(int i=0; i< springs.size(); ++i)
+      springs.at(i).apply();
     
     for(int i = 0; i < mass_point.size(); ++i)
-    {
-      mass_point.at(i).update(time, 0.1, global_time);
-    }
+      mass_point.at(i).update(time, time_multiplier, global_time);
     
     window.clear();
     for(auto i: mass_point)
@@ -189,7 +207,7 @@ int main(int argc, char const *argv[])
     window.display();
   }
 
-  system("code results.dat");
+  //system("code results.dat");
   return 0;
 }
 
@@ -284,8 +302,6 @@ Mass_Point::update(sf::Time time, float time_multiplier, sf::Time global_time)
   else
     velocity.y += (acceleration.y * relative_time); 
   
-
-  
   sf::Vector2f new_position = point.getPosition();
   
   new_position.x += (velocity.x * relative_time) * NORMAL_POS;
@@ -344,10 +360,8 @@ sf::Vector2f
 Spring::vector_lenght(Mass_Point* m1, Mass_Point* m2)
 {
   sf::Vector2f lenght;
-  lenght.x = abs(m1->get_position().x / NORMAL_POS 
-               - m2->get_position().x / NORMAL_POS);
-  lenght.y = abs(m1->get_position().y / NORMAL_POS
-               - m2->get_position().y / NORMAL_POS);
+  lenght.x = abs(m1->get_position().x - m2->get_position().x) / NORMAL_POS;
+  lenght.y = abs(m1->get_position().y - m2->get_position().y) / NORMAL_POS;
 
   return lenght;
 }

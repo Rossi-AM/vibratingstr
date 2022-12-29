@@ -4,13 +4,13 @@
 #include <string>
 #include <vector>
 #include <ctime>
-#include <stringstream>
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
 #define DEFAULT_VEL sf::Vector2f(0.0f, 0.0f)
 #define DEFAULT_CONSTRAINT Constraint()
-#define NORMAL_POS 800;
+#define NORMAL_POS 800.0f                       // 800 pixels = 1 meter
+#define NORMAL_TIME 1000000.0f
 
 // Classes
 
@@ -42,10 +42,15 @@ class Mass_Point
 
     void clear_acceleration();
     void update_accelleration(sf::Vector2f acceleration);
-    void update(sf::Time time, float time_multiplier);
+
     float get_mass() { return mass; };
+    
+    sf::Vector2f get_velocity() { return velocity; };
+    
     sf::Vector2f get_position() { return point.getPosition(); };
     
+    void update(sf::Time time, float time_multiplier, sf::Time global_time);
+
     sf::CircleShape point;
 
   private:
@@ -55,7 +60,7 @@ class Mass_Point
     sf::Vector2f acceleration;
     Constraint constraint;
 
-    void print_and_clear_buffer(stringstream &ss);
+    void print(sf::Time time);
 
     void builder(float mass, sf::Vector2f pos, sf::Vector2f velocity, Constraint constraint);
 };
@@ -129,10 +134,8 @@ class rope ()
 
 int main(int argc, char const *argv[])
 {
-
-
-
-  sf::Clock global_time;
+  system("rm results.dat");
+  sf::Clock global_clock;
 
   sf::RenderWindow window(sf::VideoMode(1000, 600), "when will ale-senpai notice me");
 
@@ -141,6 +144,7 @@ int main(int argc, char const *argv[])
   int mass = 1;
   float k = 100;
   
+  sf::Time global_time;
   sf::Time time;
   sf::Clock clock;
   
@@ -151,15 +155,6 @@ int main(int argc, char const *argv[])
     Mass_Point temp(mass, position);
 
     mass_point.push_back(temp);
-    /*
-    if(i==0) continue;
-    else
-    {
-      spring.push_back(k);
-    }
-    
-    a che cazzo serve questo ale? e non mi dire che hai scritto solo questo in mezzora e passa...
-    */
   }
   
   Gravity gravity(&mass_point);
@@ -169,6 +164,8 @@ int main(int argc, char const *argv[])
   while(window.isOpen())
   {
     time = clock.getElapsedTime();
+    global_time = global_clock.getElapsedTime();
+    
     clock.restart();
 
     sf::Event event;
@@ -183,7 +180,7 @@ int main(int argc, char const *argv[])
     
     for(int i = 0; i < mass_point.size(); ++i)
     {
-      mass_point.at(i).update(time, 1);
+      mass_point.at(i).update(time, 0.1, global_time);
     }
     
     window.clear();
@@ -191,6 +188,8 @@ int main(int argc, char const *argv[])
       window.draw(i.point);
     window.display();
   }
+
+  system("code results.dat");
   return 0;
 }
 
@@ -258,12 +257,22 @@ Mass_Point::update_accelleration(sf::Vector2f acceleration)
   this->acceleration.y += acceleration.y;
 }
 
-void
-Mass_Point::update(sf::Time time, float time_multiplier)
+void 
+Mass_Point::print(sf::Time global_time)
 {
-  float relative_time = (time.asMicroseconds() / 1000000) * time_multiplier;
-  
-  stringstream sout;
+  std::fstream outfile;
+  outfile.open("results.dat", std::ios::app);
+
+  outfile << point.getPosition().x << "\t" << point.getPosition().y 
+          << "\t" << velocity.x << "\t" << velocity.y 
+          << "\t" << acceleration.x << "\t" << acceleration.y << "\t"
+          << global_time.asMicroseconds() << "\n";
+}
+
+void
+Mass_Point::update(sf::Time time, float time_multiplier, sf::Time global_time)
+{
+  float relative_time = (time.asMicroseconds() / NORMAL_TIME) * time_multiplier;
   
   if(constraint.x)
     velocity.x = 0.0;
@@ -284,20 +293,13 @@ Mass_Point::update(sf::Time time, float time_multiplier)
 
   point.setPosition(new_position);
 
-  // Printing
-  sout << new_position.x << "\t" << new_position.y << "\t" << velocity.x << "\t" << velocity.y << "\t" << acceleration.x << "\t" << acceleration.y << "\n";
+  print(global_time);
+  
   clear_acceleration();
 }
 
 
-void 
-Mass_Point::print_and_clear_buffer(stringstream &ss)
-{
-  cout << ss.str();
-  fstream outfile("results.dat", ios::app);
-  outfile << ss.str();
-  ss.str("");
-}
+
 
 //?______________________________________________________________________________________________________________________________________________________________
 //? gravity
@@ -356,10 +358,10 @@ Spring::lenght() { return lenght(m1, m2); }
 float
 Spring::lenght(Mass_Point* m1, Mass_Point* m2)
 {
-  return sqrt( pow(m1->get_position().x / NORMAL_POS 
-                 - m2->get_position().x / NORMAL_POS, 2) 
-             + pow(m1->get_position().y / NORMAL_POS 
-                 - m2->get_position().y / NORMAL_POS, 2));
+  return sqrt( pow((m1->get_position().x / NORMAL_POS 
+                  - m2->get_position().x / NORMAL_POS), 2) 
+             + pow((m1->get_position().y / NORMAL_POS 
+                  - m2->get_position().y / NORMAL_POS), 2));
 }
 
 void

@@ -155,10 +155,12 @@ int main(int argc, char const *argv[])
   sf::RenderWindow window(sf::VideoMode(1000, 600), "when will ale-senpai notice me");
 
   std::vector<Mass_Point> mass_point;
-  int mass_point_num = 100;
-  int mass = 1;
+  int mass_point_num = 1000;
+  float mass = 1;
   float k = 56000;
-  float time_increment = 0.0001;
+  float time_increment = 0.001;
+  int ipf = 100;
+  int normal_mode = 1;
   
   sf::Time global_time;
   sf::Time time;
@@ -171,7 +173,7 @@ int main(int argc, char const *argv[])
 
     Mass_Point temp(mass, position, constraint);
 
-    position.y += std::sin((position.x / 1000) * 3.14) * 100;
+    position.y -= std::sin((position.x / (window.getSize().x / normal_mode) ) * 3.14) * window.getSize().y / 6;
 
     temp.set_position(position);
 
@@ -207,14 +209,17 @@ int main(int argc, char const *argv[])
       if(event.type == sf::Event::Closed) 
         window.close();
 
-//    gravity.apply();
+    for(int j=0; j<ipf; ++j)
+    {
+      //gravity.apply();
 
-    for(int i=0; i< springs.size(); ++i)
-      springs.at(i).apply();
+      for(int i=0; i< springs.size(); ++i)
+        springs.at(i).apply();
     
-    for(int i = 0; i < mass_point.size(); ++i)
-      mass_point.at(i).update(time_increment, global_time);
-    
+      for(int i = 0; i < mass_point.size(); ++i)
+        mass_point.at(i).update(time_increment, global_time);
+    }
+
     window.clear();
     for(auto i: mass_point)
       window.draw(i.point);
@@ -314,8 +319,8 @@ Mass_Point::update(float time_increment, sf::Time global_time)
   else
     velocity.y += (acceleration.y * time_increment); 
   
-  // velocity.x *= 0.9999;
-  // velocity.y *= 0.9999;
+   //velocity.x *= 0.9999;
+   //velocity.y *= 0.9999;
 
   sf::Vector2f new_position = point.getPosition();
   

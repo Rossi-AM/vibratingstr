@@ -151,14 +151,14 @@ int main(int argc, char const *argv[])
   //system("rm results.dat");
   sf::Clock global_clock;
 
-  sf::RenderWindow window(sf::VideoMode(1000, 600), "when will ale-senpai notice me");
+  sf::RenderWindow window(sf::VideoMode(1000, 800), "when will ale-senpai notice me");
 
   std::vector<Mass_Point> mass_point;
-  int mass_point_num = 1000;
-  float mass = 1;
-  float k = 56000;
-  float time_increment = 0.001;
-  int ipf = 100;
+  int mass_point_num = 2000;
+  float mass = 0.00001f;
+  float k = 1000;
+  float time_increment = 0.00001f;
+  int ipf = 100000;
   int normal_mode = 1;
   
   sf::Time global_time;
@@ -167,14 +167,14 @@ int main(int argc, char const *argv[])
   
   for(int i = 0; i < mass_point_num; ++i)
   {
-    sf::Vector2f position((window.getSize().x/(mass_point_num - 1))*i, window.getSize().y/2);
+    sf::Vector2f position((static_cast<float>(window.getSize().x)/(mass_point_num - 1))*i, static_cast<float>(window.getSize().y)/2);
     Constraint constraint(false, false);
 
     Mass_Point temp(mass, position, constraint);
 
-    position.y -= std::sin((position.x / (window.getSize().x / normal_mode) ) * 3.14) * window.getSize().y / 6;
+    // position.y -= std::sin((position.x / (static_cast<float>(window.getSize().x) / normal_mode) ) * 3.14) * static_cast<float>(window.getSize().y) / 6;
 
-    temp.set_position(position);
+    // temp.set_position(position);
 
     mass_point.push_back(temp);
   }
@@ -210,7 +210,7 @@ int main(int argc, char const *argv[])
 
     for(int j=0; j<ipf; ++j)
     {
-      //gravity.apply();
+      gravity.apply();
 
       for(int i=0; i< springs.size(); ++i)
         springs.at(i).apply();
@@ -426,3 +426,5 @@ Spring::apply()
   m1->update_accelleration(a1);
   m2->update_accelleration(a2);
 }
+
+// c++ -c ml_main.cpp && c++ ml_main.o -o ex_main $SFML

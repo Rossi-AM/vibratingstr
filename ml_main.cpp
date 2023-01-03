@@ -10,7 +10,6 @@
 #define DEFAULT_VEL sf::Vector2f(0.0f, 0.0f)
 #define DEFAULT_CONSTRAINT Constraint()
 #define NORMAL_POS 800.0f                       // 800 pixels = 1 meter
-#define NORMAL_TIME 1000000.0f
 
 // Classes
 

@@ -433,8 +433,8 @@ Mass_Point::update(float time_increment, sf::Time global_time)
   else
     velocity.y += (acceleration.y * time_increment); 
   
-   velocity.x *= 0.9999;
-   velocity.y *= 0.9999;
+   //velocity.x *= 0.9999;
+   //velocity.y *= 0.9999;
 
   sf::Vector2f new_position = point.getPosition();
   

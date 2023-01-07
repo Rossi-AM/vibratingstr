@@ -18,8 +18,15 @@
 // for Spring
 #define DEFAULT_REST_L 0.0f
 
-//for Rope
-#define DEFAULT_REPETITION 1
+//for Linear_Shape
+struct Linear_Data;
+
+#define DEFAULT_AMPLITUDE 1.0f
+#define DEFAULT_WIDTH 1.0f
+#define DEFAULT_REPETITIONS 1.0f
+#define DEFAULT_CURRENT_FUNCTION "line"
+
+typedef std::function<void (std::vector<sf::Vector2f>*, float, float, Linear_Data)> linear_method;
 
 // for multiple classes
 #define DEFAULT_CONSTRAINT Constraint()
@@ -27,6 +34,16 @@
 
 
 // Classes
+// Declaration
+
+class Constraint;
+class Mass_Point;
+class Gravity;
+class Spring;
+class Rope;
+class Linear_Shape;
+
+// Definition
 
 class Constraint
 {
@@ -143,37 +160,37 @@ class Spring
 {
   public:
 
-    Spring(float k, Mass_Point* m1, Mass_Point* m2, int rest_lenght = DEFAULT_REST_L) 
-      { builder(k, m1, m2, rest_lenght = DEFAULT_REST_L); }
+    Spring(float k, Mass_Point* m1, Mass_Point* m2, int rest_length = DEFAULT_REST_L) 
+      { builder(k, m1, m2, rest_length = DEFAULT_REST_L); }
 
     Spring(float k, Mass_Point* m1, Mass_Point* m2, bool at_rest) 
-      { builder(k, m1, m2, get_lenght(m1, m2)); }
+      { builder(k, m1, m2, get_length(m1, m2)); }
 
 
-    void set_rest_lenght(float rest_lenght) { this->rest_lenght = rest_lenght;};
+    void set_rest_length(float rest_length) { this->rest_length = rest_length;};
     float get_k() { return k; };
-    float get_lenght() { update_lenght(); return lenght;};
+    float get_length() { update_length(); return length;};
 
     void apply();
 
   private: 
     
     float k;
-    float rest_lenght;
-    float lenght;
-    sf::Vector2f vector_lenght;
+    float rest_length;
+    float length;
+    sf::Vector2f vector_length;
     Mass_Point *m1, *m2;
 
-    void builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_lenght);
+    void builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_length);
 
-    void update_vector_lenght();                                                   // output the distance in sf::Vector2f between the extremis of the spring
-    void update_vector_lenght(Mass_Point* m1, Mass_Point* m2);                     // output the distance in sf::Vector2f between the arguments
+    void update_vector_length();                                                   // output the distance in sf::Vector2f between the extremis of the spring
+    void update_vector_length(Mass_Point* m1, Mass_Point* m2);                     // output the distance in sf::Vector2f between the arguments
 
-    void update_lenght();
-    void update_lenght(Mass_Point* m1, Mass_Point* m2);
+    void update_length();
+    void update_length(Mass_Point* m1, Mass_Point* m2);
 
-    float get_lenght(Mass_Point* m1, Mass_Point* m2) 
-    { update_lenght(m1, m2); return lenght; };
+    float get_length(Mass_Point* m1, Mass_Point* m2) 
+    { update_length(m1, m2); return length; };
 };
 
 
@@ -184,7 +201,7 @@ class Rope
   Rope(int point_number, 
        float mass, 
        float tension, 
-       float lenght, 
+       float length, 
        sf::Vector2f position, 
        Constraint a = DEFAULT_CONSTRAINT, 
        Constraint b = DEFAULT_CONSTRAINT, 
@@ -193,25 +210,26 @@ class Rope
   Rope(int point_number, 
        float mass, 
        float tension, 
-       float lenght, 
+       float length, 
        sf::Vector2f position, 
        sf::Color color = DEFAULT_COLOR);
   
-
-
-  void connect_to(Rope *rope); // to connect two ropes
+  Rope(Rope left,
+       Rope Right,
+       sf::Color color = DEFAULT_COLOR);
 
   float get_tension() { update_tension(); return tension; }; // return the current medium tension of the rope
-  float get_lenght() { update_lenght(); return lenght;};  // return the current lenght of the rope
+  float get_length() { update_length(); return length;};  // return the current length of the rope
   float get_mass() { return mass; }; // return the mass of the rope
+  float size() { return point_number; };
 
   void set_constraint(std::string point_name, Constraint constraint = DEFAULT_CONSTRAINT); // take a or b (the extremis)
   void set_constraint(std::string point_name, bool x, bool y);                             // and set the constraint
   
   void set_color(sf::Color color); // change the rope color
 
-  void set_shape(std::string, int repetitions = DEFAULT_REPETITION); // usare un enum per decidere le possibili posizioni? (almeno sin con modi normali richiesto)
-
+  void set_shape(Linear_Shape shape, float oscillation_amplitude); // set the position of the rope, oscillational amplitude
+                                                                   // are to be passed after normalization (as meters)
 
   Mass_Point get_mass(int i) { return this->mass_point.at(i); }; // return a copy of the mass at i
   Spring get_spring(int i){ return this->spring.at(i); }; // return a copy of the spring at i
@@ -219,8 +237,7 @@ class Rope
   sf::Vector2f get_position_at(int i) { return this->mass_point.at(i).get_position(); }; // return the position of point i
   sf::Vector2f get_velocity_at(int i) { return this->mass_point.at(i).get_velocity(); }; // return the velocity of point i
 
-  void set_x_sliding(bool x = false); // set all mass_point.constraint.x exept the first and last
-
+  void set_x_sliding(bool x = true); // set all mass_point.constraint.x except the first and last
 
   void add_gravity(Gravity* gravity) { gravity->add(&mass_point); }; // add gravity to all mass_point
 
@@ -229,11 +246,10 @@ class Rope
   void update(float time_increment); // update all mass_point positions and velocity
 
 
-
   private:
 
   int point_number;
-  float lenght;
+  float length;
   float mass;
   float tension;
   sf::Vector2f position;
@@ -245,7 +261,7 @@ class Rope
   void builder(int point_number, 
                float mass, 
                float tension, 
-               float lenght, 
+               float length, 
                sf::Vector2f position,  
                Constraint a = DEFAULT_CONSTRAINT, 
                Constraint b = DEFAULT_CONSTRAINT, 
@@ -255,7 +271,54 @@ class Rope
   std::vector<Spring> spring_builder();
   
   void update_tension();
-  void update_lenght();
+  void update_length();
+};
+
+
+struct Linear_Data
+{
+  float amplitude;    // from 0 to 1, fraction of requested height for displacement
+  float width;        // from 0 to 1, fraction of requested length over wich the function will be applied 
+  float repetitions;  // number of repetitions of the function over the width
+};
+
+class Linear_Shape
+{ 
+  public:
+  typedef std::function<void (std::vector<sf::Vector2f>*, float, float)> linear_function;
+
+  Linear_Shape(std::string function_name = DEFAULT_CURRENT_FUNCTION, 
+               float amplitude = DEFAULT_AMPLITUDE,
+               float width = DEFAULT_WIDTH,
+               float repetitions = DEFAULT_REPETITIONS);
+
+  Linear_Shape(float amplitude = DEFAULT_AMPLITUDE,
+               float width = DEFAULT_WIDTH,
+               float repetitions = DEFAULT_REPETITIONS);
+
+  void set_amplitude(float amplitude);
+  void set_repetitions(float repetitions) {this->data.repetitions = repetitions; };
+  void set_width(float width);
+
+  void add_function(std::string name, linear_method foo);
+
+  void change_function(std::string name) { this->current_function = name; };
+
+  void apply(std::vector<sf::Vector2f>* position, float length, float height);
+
+  private:
+
+  std::string current_function;
+  Linear_Data data;
+
+  std::map<std::string, linear_function> functions;
+
+  void builder(std::string function_name = DEFAULT_CURRENT_FUNCTION, 
+               float amplitude = DEFAULT_AMPLITUDE,
+               float width = DEFAULT_WIDTH,
+               float repetitions = DEFAULT_REPETITIONS);
+
+  void function_loader();
 };
 
 
@@ -497,35 +560,35 @@ Gravity::apply()
 //? spring
 
 void
-Spring::builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_lenght)
+Spring::builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_length)
 {
   this->k = k;
   this->m1 = m1;
   this->m2 = m2;
-  set_rest_lenght(rest_lenght);
+  set_rest_length(rest_length);
 }
 
 void
-Spring::update_vector_lenght() { update_vector_lenght(m1, m2); }
+Spring::update_vector_length() { update_vector_length(m1, m2); }
 
 void
-Spring::update_vector_lenght(Mass_Point* m1, Mass_Point* m2)
+Spring::update_vector_length(Mass_Point* m1, Mass_Point* m2)
 {
-  this->vector_lenght.x = abs(m1->get_position().x * 1000 
+  this->vector_length.x = abs(m1->get_position().x * 1000 
                             - m2->get_position().x * 1000) 
                             / (NORMAL_POS * 1000);
-  this->vector_lenght.y = abs(m1->get_position().y * 1000 
+  this->vector_length.y = abs(m1->get_position().y * 1000 
                             - m2->get_position().y * 1000) 
                             / (NORMAL_POS * 1000);
 }
 
 void
-Spring::update_lenght() { update_lenght(m1, m2); }
+Spring::update_length() { update_length(m1, m2); }
 
 void
-Spring::update_lenght(Mass_Point* m1, Mass_Point* m2)
+Spring::update_length(Mass_Point* m1, Mass_Point* m2)
 {
-  this->lenght = sqrt( pow((m1->get_position().x * 1000 
+  this->length = sqrt( pow((m1->get_position().x * 1000 
                      - m2->get_position().x * 1000) / (NORMAL_POS * 1000), 2) 
                      + pow((m1->get_position().y * 1000 
                      - m2->get_position().y * 1000) / (NORMAL_POS * 1000), 2));
@@ -537,11 +600,11 @@ Spring::apply()
   sf::Vector2f force;
   sf::Vector2f a1, a2;
   
-  update_lenght();
-  update_vector_lenght();
+  update_length();
+  update_vector_length();
 
-  force.x = (lenght - rest_lenght) * k * (vector_lenght.x / lenght);
-  force.y = (lenght - rest_lenght) * k * (vector_lenght.y / lenght);
+  force.x = (length - rest_length) * k * (vector_length.x / length);
+  force.y = (length - rest_length) * k * (vector_length.y / length);
 
   a1 = (force / m1->get_mass());
   a2 = ((-force) / m2->get_mass());
@@ -568,14 +631,14 @@ Spring::apply()
 Rope::Rope(int point_number, 
            float mass, 
            float tension, 
-           float lenght, 
+           float length, 
            sf::Vector2f position , 
            Constraint a, 
            Constraint b, 
            sf::Color color)
 {
   builder(point_number, mass, 
-          tension, lenght, position, 
+          tension, length, position, 
           a, 
           b, 
           color);
@@ -584,39 +647,68 @@ Rope::Rope(int point_number,
 Rope::Rope(int point_number, 
            float mass, 
            float tension, 
-           float lenght, 
+           float length, 
            sf::Vector2f position, 
            sf::Color color)
 {
   builder(point_number, mass, tension, 
-          lenght, position,
+          length, position,
            a, 
            b, 
            color);
 }
 
+Rope::Rope(Rope left, Rope right, sf::Color color)
+{
+  for(int i = 0; i < left.size(); ++i)
+    this->mass_point.push_back(left.get_mass(i));
+  
+  mass_point.at(left.size()-1).set_constraint();
+
+  for(int i = 0; i < right.size(); ++i)
+    this->mass_point.push_back(right.get_mass(i));
+
+  mass_point.at(left.size()).set_constraint();
+
+  for(int i = 0; i < left.size() -1; ++i)
+    this->spring.push_back(left.get_spring(i));
+
+  Spring temp(this->spring.at(0).get_k(),
+              &mass_point.at(left.size() -1),
+              &mass_point.at(left.size()));
+
+  spring.push_back(temp);
+
+  for(int i = 0; i < right.size() -1; ++i)
+    this->spring.push_back(right.get_spring(i));
+
+  this->point_number = mass_point.size();
+  this->mass = left.get_mass() + right.get_mass();
+  update_tension();
+  update_length();
+  this->position = mass_point.at(0).get_position();
+  this->a = mass_point.front().get_constraint();
+  this->b = mass_point.back().get_constraint();
+  this->color = color; 
+}
 
 void 
 Rope::builder(int point_number, float mass, float tension, 
-              float lenght, sf::Vector2f position,  
+              float length, sf::Vector2f position,  
               Constraint a, Constraint b, sf::Color color)
 {
-  this->lenght = lenght * NORMAL_POS;
+  this->point_number = point_number;
+  this->mass = mass;
+  this->length = length * NORMAL_POS;
   this->tension = tension;
-  this->lenght = lenght;
+  this->length = length;
   this->position = position;
-  this->a = a;
+  this->a = a; 
   this->b = b;
   this->color = color;
 
   this->mass_point = mass_builder();
   this->spring = spring_builder();
-}
-
-void
-Rope::connect_to(Rope* rope)
-{
-  
 }
 
 std::vector<Mass_Point> 
@@ -626,11 +718,11 @@ Rope::mass_builder()
 
   for(int i = 0; i < point_number; ++i)
   {
-    sf::Vector2f temp_pos(position.x + i * lenght / point_number, position.y);
+    sf::Vector2f temp_pos(position.x + i * length / point_number, position.y);
     
     Mass_Point temp(mass / point_number, temp_pos, color);
  
-    mass_point.push_back(temp);   
+    mass_point.push_back(temp);
   }
 
   mass_point.front().set_constraint(a);
@@ -643,7 +735,7 @@ std::vector<Spring>
 Rope::spring_builder()
 {
   std::vector<Spring> spring;
-  float k = (tension / lenght) * point_number;
+  float k = (tension / length) * point_number;
 
   for(int i = 0; i < mass_point.size() - 1 ; ++i)
   {
@@ -661,18 +753,18 @@ Rope::update_tension()
   float force = 0.0f;
 
   for(auto i: spring)
-    force += i.get_k() * i.get_lenght();
+    force += i.get_k() * i.get_length();
   
   this->tension = force / point_number;
 }
 
 void
-Rope::update_lenght()
+Rope::update_length()
 {
-  this->lenght = 0;
+  this->length = 0;
 
   for(auto i: spring)
-    this->lenght += i.get_lenght();
+    this->length += i.get_length();
 }
 
 void
@@ -700,6 +792,21 @@ Rope::set_color(sf::Color color)
 }
 
 void
+Rope::set_shape(Linear_Shape shape, float oscillation_amplitude)
+{
+  std::vector<sf::Vector2f> new_position;
+
+  for(int i = 0; i < mass_point.size(); ++i)
+    new_position.push_back(mass_point.at(i).get_position());
+
+  shape.apply(&new_position, length,
+              oscillation_amplitude * NORMAL_POS);
+
+  for(int i = 0; i < new_position.size(); ++i)
+    mass_point.at(i).set_position(new_position.at(i));
+}
+
+void
 Rope::set_x_sliding(bool x)
 {
   for(int i = 1; i < mass_point.size() - 1; ++i)
@@ -718,4 +825,159 @@ Rope::update(float time_increment)
 {
   for(int i = 0; i < mass_point.size(); ++i)
     mass_point.at(i).update(time_increment);
+}
+
+//? ________________________________________________________________________________________________________
+//? Linear_Shape
+
+Linear_Shape::Linear_Shape(std::string function_name,
+                           float amplitude, 
+                           float width, 
+                           float repetitions)
+{
+  builder(function_name, amplitude, width, repetitions);
+}
+
+Linear_shape::Linear_Shape(float amplitude = DEFAULT_AMPLITUDE,
+             float width = DEFAULT_WIDTH,
+             float repetitions = DEFAULT_REPETITIONS)
+{
+  builder(DEFAULT_CURRENT_FUNCTION, amplitude, width, repetitions);
+}
+
+void
+Linear_Shape::builder(std::string function_name = DEFAULT_CURRENT_FUNCTION, 
+                      float amplitude = DEFAULT_AMPLITUDE,
+                      float width = DEFAULT_WIDTH,
+                      float repetitions = DEFAULT_REPETITIONS)
+{
+  this->current_function = function_name;
+  this->data = {amplitude, width, repetitions};
+
+  function_loader();  
+}
+
+
+
+void
+Linear_Shape::set_amplitude(float amplitude)
+{
+  if(amplitude > 1)
+    amplitude = 1;
+  else if(amplitude < 0)
+    amplitude = 0;
+
+  this->data.amplitude = amplitude;
+}
+
+void
+Linear_Shape::set_width(float width)
+{
+  if(width > 1)
+    width = 1;
+  else if(width < 0)
+    width = 0;
+
+  this->data.width = width;
+}
+
+
+void
+Linear_Shape::add_function(std::string name, linear_method foo)
+{
+  functions[name] = [this, foo](std::vector<sf::Vector2f>* position, float length, float height)
+  { foo(position, length, height, data); };
+}
+
+void
+Linear_Shape::apply(std::vector<sf::Vector2f>* position, float length, float height)
+{
+    functions[current_function](position, length, height);
+}
+
+
+
+void
+Linear_Shape::function_loader()
+{
+  // line distribution
+  add_function("line",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    for(int i = 0; i < position->size(); ++i)
+      position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+  });
+
+  add_function("sine",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    for(int i = 0; i < position->size(); ++i)
+    {
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < lenght * data.width * NORMAL_POS )
+      {
+        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+        position->at(i).y = position->at(0).y - std::sin((position->at(i).x / repetitions * std::pi)) * height * data.amplitude / 2;
+      }
+      else
+      {
+        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      }
+    }
+  });
+
+  add_function("cosine",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    for(int i = 0; i < position->size(); ++i)
+    {
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < lenght * data.width * NORMAL_POS )
+      {
+        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+        position->at(i).y = position->at(0).y - std::cos((position->at(i).x / data.repetitions * std::pi)) * height * data.amplitude / 2;
+      }
+      else
+      {
+        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      }
+    }
+  });
+
+  add_function("square",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    sf::Vector2f pos0 = position->at(0);
+
+    for(int i = 0; i < position->size(); ++i)
+    {
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < lenght * data.width * NORMAL_POS )
+      {
+        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+        
+        for(int j = 0; j < data.repetitions; ++j)
+        {
+          if(position->at(i).x < (lenght * data.width / data.repetitions) / 2)
+            position->at(i).y = pos0.y - height * data.amplitude / 2;
+        
+          else
+            position->at(i).y = pos0.y + height * data.amplitude / 2;
+        }
+      }
+      else
+      {
+        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      }
+    }
+  });
+
+  add_function("triangle",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    
+  });
+
+  add_function("simpleton",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    
+  });
 }

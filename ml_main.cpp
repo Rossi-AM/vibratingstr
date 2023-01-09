@@ -140,9 +140,9 @@ class Gravity
 {
   public:
 
-  Gravity(std::vector<Mass_Point> *mass_point);
+  Gravity(std::vector<Mass_Point>* mass_point);
 
-  void add(std::vector<Mass_Point> *mass_point);
+  void add(std::vector<Mass_Point>* mass_point);
   void add(Mass_Point* mass_point);
 
   void apply();
@@ -179,7 +179,8 @@ class Spring
     float rest_length;
     float length;
     sf::Vector2f vector_length;
-    Mass_Point *m1, *m2;
+    Mass_Point* m1;
+    Mass_Point* m2;
 
     void builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_length);
 
@@ -198,7 +199,7 @@ class Rope
 {
   public:
 
-  Rope(int point_number, 
+  Rope(unsigned int point_number, 
        float mass, 
        float tension, 
        float length, 
@@ -207,7 +208,7 @@ class Rope
        Constraint b = DEFAULT_CONSTRAINT, 
        sf::Color color = DEFAULT_COLOR);
   
-  Rope(int point_number, 
+  Rope(unsigned int point_number, 
        float mass, 
        float tension, 
        float length, 
@@ -221,7 +222,7 @@ class Rope
   float get_tension() { update_tension(); return tension; }; // return the current medium tension of the rope
   float get_length() { update_length(); return length;};  // return the current length of the rope
   float get_mass() { return mass; }; // return the mass of the rope
-  float size() { return point_number; };
+  unsigned int size() { return point_number; };
 
   void set_constraint(std::string point_name, Constraint constraint = DEFAULT_CONSTRAINT); // take a or b (the extremis)
   void set_constraint(std::string point_name, bool x, bool y);                             // and set the constraint
@@ -231,11 +232,13 @@ class Rope
   void set_shape(Linear_Shape shape, float oscillation_amplitude); // set the position of the rope, oscillational amplitude
                                                                    // are to be passed after normalization (as meters)
 
-  Mass_Point get_mass(int i) { return this->mass_point.at(i); }; // return a copy of the mass at i
-  Spring get_spring(int i){ return this->spring.at(i); }; // return a copy of the spring at i
+  Mass_Point get_mass(unsigned int i); // return a copy of the mass at i
+  Spring get_spring(unsigned int i); // return a copy of the spring at i
 
-  sf::Vector2f get_position_at(int i) { return this->mass_point.at(i).get_position(); }; // return the position of point i
-  sf::Vector2f get_velocity_at(int i) { return this->mass_point.at(i).get_velocity(); }; // return the velocity of point i
+  sf::Vector2f get_position_at(unsigned int i); // return the position of point i
+  sf::Vector2f get_velocity_at(unsigned int i); // return the velocity of point i
+
+  Spring attach_mass(Mass_Point* mass, float k, unsigned int i);
 
   void set_x_sliding(bool x = true); // set all mass_point.constraint.x except the first and last
 
@@ -248,7 +251,7 @@ class Rope
 
   private:
 
-  int point_number;
+  unsigned int point_number;
   float length;
   float mass;
   float tension;
@@ -258,7 +261,7 @@ class Rope
   std::vector<Mass_Point> mass_point;
   std::vector<Spring> spring;
 
-  void builder(int point_number, 
+  void builder(unsigned int point_number, 
                float mass, 
                float tension, 
                float length, 
@@ -628,7 +631,7 @@ Spring::apply()
 //? ________________________________________________________________________________________________________
 //? Rope
 
-Rope::Rope(int point_number, 
+Rope::Rope(unsigned int point_number, 
            float mass, 
            float tension, 
            float length, 
@@ -644,7 +647,7 @@ Rope::Rope(int point_number,
           color);
 }
 
-Rope::Rope(int point_number, 
+Rope::Rope(unsigned int point_number, 
            float mass, 
            float tension, 
            float length, 
@@ -693,7 +696,7 @@ Rope::Rope(Rope left, Rope right, sf::Color color)
 }
 
 void 
-Rope::builder(int point_number, float mass, float tension, 
+Rope::builder(unsigned int point_number, float mass, float tension, 
               float length, sf::Vector2f position,  
               Constraint a, Constraint b, sf::Color color)
 {
@@ -752,10 +755,13 @@ Rope::update_tension()
 {
   float force = 0.0f;
 
-  for(auto i: spring)
-    force += i.get_k() * i.get_length();
+  for(int i = 0; i < spring.size(); ++i)
+    force = force * (i / i+1) + 
+            spring.at(i).get_k() * 
+            spring.at(i).get_length() / 
+            (i+1);   
   
-  this->tension = force / point_number;
+  this->tension = force;
 }
 
 void
@@ -806,6 +812,57 @@ Rope::set_shape(Linear_Shape shape, float oscillation_amplitude)
     mass_point.at(i).set_position(new_position.at(i));
 }
 
+Mass_Point
+Rope::get_mass(unsigned int i)
+{
+  if(i > point_number)
+    i = point_number -1;  
+
+  return this->mass_point.at(i); 
+};
+
+
+Spring
+Rope::get_spring(unsigned int i)
+{  
+  if(i > point_number)
+    i = point_number -1;
+
+   return this->spring.at(i); 
+};
+
+
+sf::Vector2f
+Rope::get_position_at(unsigned int i)
+{
+  if(i > point_number)
+    i = point_number -1;
+
+
+  return this->mass_point.at(i).get_position(); 
+};
+
+sf::Vector2f
+Rope::get_velocity_at(unsigned int i)
+{ 
+  if(i > point_number)
+    i = point_number -1;
+
+  return this->mass_point.at(i).get_velocity(); 
+};
+
+
+Spring
+Rope::attach_mass(Mass_Point* mass, float k, unsigned int i)
+{
+  if(i > point_number)
+    i = point_number -1;
+
+  Spring new_spring(k, mass, &mass_point.at(i));
+
+  return new_spring;
+}
+
 void
 Rope::set_x_sliding(bool x)
 {
@@ -825,6 +882,8 @@ Rope::update(float time_increment)
 {
   for(int i = 0; i < mass_point.size(); ++i)
     mass_point.at(i).update(time_increment);
+
+  this->position = get_position_at(0);
 }
 
 //? ________________________________________________________________________________________________________
@@ -838,18 +897,18 @@ Linear_Shape::Linear_Shape(std::string function_name,
   builder(function_name, amplitude, width, repetitions);
 }
 
-Linear_shape::Linear_Shape(float amplitude = DEFAULT_AMPLITUDE,
-             float width = DEFAULT_WIDTH,
-             float repetitions = DEFAULT_REPETITIONS)
+Linear_Shape::Linear_Shape(float amplitude,
+             float width,
+             float repetitions)
 {
   builder(DEFAULT_CURRENT_FUNCTION, amplitude, width, repetitions);
 }
 
 void
-Linear_Shape::builder(std::string function_name = DEFAULT_CURRENT_FUNCTION, 
-                      float amplitude = DEFAULT_AMPLITUDE,
-                      float width = DEFAULT_WIDTH,
-                      float repetitions = DEFAULT_REPETITIONS)
+Linear_Shape::builder(std::string function_name, 
+                      float amplitude,
+                      float width,
+                      float repetitions)
 {
   this->current_function = function_name;
   this->data = {amplitude, width, repetitions};
@@ -913,10 +972,10 @@ Linear_Shape::function_loader()
   {
     for(int i = 0; i < position->size(); ++i)
     {
-      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < lenght * data.width * NORMAL_POS )
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
       {
         position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
-        position->at(i).y = position->at(0).y - std::sin((position->at(i).x / repetitions * std::pi)) * height * data.amplitude / 2;
+        position->at(i).y = position->at(0).y - std::sin((position->at(i).x / data.repetitions * M_PI)) * height * data.amplitude / 2;
       }
       else
       {
@@ -930,10 +989,10 @@ Linear_Shape::function_loader()
   {
     for(int i = 0; i < position->size(); ++i)
     {
-      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < lenght * data.width * NORMAL_POS )
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
       {
         position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
-        position->at(i).y = position->at(0).y - std::cos((position->at(i).x / data.repetitions * std::pi)) * height * data.amplitude / 2;
+        position->at(i).y = position->at(0).y - std::cos((position->at(i).x / data.repetitions * M_PI)) * height * data.amplitude / 2;
       }
       else
       {
@@ -949,13 +1008,13 @@ Linear_Shape::function_loader()
 
     for(int i = 0; i < position->size(); ++i)
     {
-      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < lenght * data.width * NORMAL_POS )
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
       {
         position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
         
         for(int j = 0; j < data.repetitions; ++j)
         {
-          if(position->at(i).x < (lenght * data.width / data.repetitions) / 2)
+          if(position->at(i).x < (length * data.width / data.repetitions) / 2)
             position->at(i).y = pos0.y - height * data.amplitude / 2;
         
           else

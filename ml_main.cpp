@@ -7,11 +7,43 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
+// for sf::CircleShape
+#define DEFAULT_C_POINT_COUNT 30
+#define DEFAULT_P_RADIUS 3.0f
+
+// for Mass_Point
 #define DEFAULT_VEL sf::Vector2f(0.0f, 0.0f)
-#define DEFAULT_CONSTRAINT Constraint()
 #define NORMAL_POS 800.0f                       // 800 pixels = 1 meter
 
+// for Spring
+#define DEFAULT_REST_L 0.0f
+
+//for Linear_Shape
+struct Linear_Data;
+
+#define DEFAULT_AMPLITUDE 1.0f
+#define DEFAULT_WIDTH 1.0f
+#define DEFAULT_REPETITIONS 1.0f
+#define DEFAULT_CURRENT_FUNCTION "line"
+
+typedef std::function<void (std::vector<sf::Vector2f>*, float, float, Linear_Data)> linear_method;
+
+// for multiple classes
+#define DEFAULT_CONSTRAINT Constraint()
+#define DEFAULT_COLOR sf::Color::White
+
+
 // Classes
+// Declaration
+
+class Constraint;
+class Mass_Point;
+class Gravity;
+class Spring;
+class Rope;
+class Linear_Shape;
+
+// Definition
 
 class Constraint
 {
@@ -32,15 +64,31 @@ class Mass_Point
 { 
   public:
 
-    Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint/*, float radius, std::size_t pointCount*/);    
-    Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity);
-    Mass_Point(float mass, sf::Vector2f position, Constraint constraint);
-    Mass_Point(float mass, sf::Vector2f position);
+    Mass_Point(float mass, 
+               sf::Vector2f position, 
+               sf::Vector2f velocity = DEFAULT_VEL, 
+               Constraint constraint = DEFAULT_CONSTRAINT, 
+               sf::Color color = DEFAULT_COLOR);    
+
+    Mass_Point(float mass, 
+               sf::Vector2f position,
+               Constraint constraint = DEFAULT_CONSTRAINT, 
+               sf::Color color = DEFAULT_COLOR);
+
+    Mass_Point(float mass, 
+               sf::Vector2f position, 
+               sf::Vector2f velocity = DEFAULT_VEL,
+               sf::Color color = DEFAULT_COLOR);
+
+    Mass_Point(float mass,
+               sf::Vector2f position,
+               sf::Color color = DEFAULT_COLOR);
+
 
 
 
     void clear_acceleration();
-    void update_accelleration(sf::Vector2f acceleration);
+    void update_acceleration(sf::Vector2f acceleration);
 
     float get_mass() { return mass; };
     
@@ -54,16 +102,20 @@ class Mass_Point
     
     sf::Vector2f get_position() { return point.getPosition(); };
     void set_position(sf::Vector2f position) { this->point.setPosition(position); };
-    void setposition(float x, float y) { this->point.setPosition(x,y); };
+    void set_position(float x, float y) { this->point.setPosition(x,y); };
 
-    void set_constraint(Constraint constraint) { this->constraint = constraint; };
+    void set_constraint(Constraint constraint = DEFAULT_CONSTRAINT) 
+    { this->constraint = constraint; };
     void set_constraint(bool x, bool y)
       {
         this->constraint.x = x; 
         this->constraint.y = y;
       };
+    Constraint get_constraint() { return constraint; };
+
+    void set_color(sf::Color color = DEFAULT_COLOR) { this->point.setFillColor(color); };
     
-    void update(float time_increment, sf::Time global_time);
+    void update(float time_increment);
 
     sf::CircleShape point;
 
@@ -76,7 +128,11 @@ class Mass_Point
 
     void print(sf::Time time);
 
-    void builder(float mass, sf::Vector2f pos, sf::Vector2f velocity, Constraint constraint);
+    void builder(float mass, 
+                 sf::Vector2f pos, 
+                 sf::Vector2f velocity = DEFAULT_VEL, 
+                 Constraint constraint = DEFAULT_CONSTRAINT, 
+                 sf::Color color = DEFAULT_COLOR);
 };
 
 
@@ -84,16 +140,18 @@ class Gravity
 {
   public:
 
-    Gravity(std::vector<Mass_Point> *mass_point);
+  Gravity(std::vector<Mass_Point>* mass_point);
 
+  void add(std::vector<Mass_Point>* mass_point);
+  void add(Mass_Point* mass_point);
 
-    void apply();
+  void apply();
   
 
   private:
 
-    const float g = 9.81;
-    std::vector<Mass_Point*> points;
+  sf::Vector2f g;
+  std::vector<Mass_Point*> points;
 
 };
 
@@ -102,46 +160,170 @@ class Spring
 {
   public:
 
-    Spring(float k, Mass_Point* m1, Mass_Point* m2) 
-      { builder(k, m1, m2, 0); }
-    Spring(float k, Mass_Point* m1, Mass_Point* m2, int rest_lenght) 
-      { builder(k, m1, m2, rest_lenght); }
-    Spring(float k, Mass_Point* m1, Mass_Point* m2, bool at_rest) 
-      { builder(k, m1, m2, lenght(m1, m2)); }
+    Spring(float k, Mass_Point* m1, Mass_Point* m2, int rest_length = DEFAULT_REST_L) 
+      { builder(k, m1, m2, rest_length = DEFAULT_REST_L); }
 
+    Spring(float k, Mass_Point* m1, Mass_Point* m2, bool at_rest) 
+      { builder(k, m1, m2, get_length(m1, m2)); }
+
+
+    void set_rest_length(float rest_length) { this->rest_length = rest_length;};
+    float get_k() { return k; };
+    float get_length() { update_length(); return length;};
 
     void apply();
-    void set_rest_lenght(float rest_lenght) { this->rest_lenght = rest_lenght;};
-
 
   private: 
     
     float k;
-    float rest_lenght;
-    Mass_Point *m1, *m2;
+    float rest_length;
+    float length;
+    sf::Vector2f vector_length;
+    Mass_Point* m1;
+    Mass_Point* m2;
 
-    void builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_lenght);
+    void builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_length);
 
-    float lenght();
-    float lenght(Mass_Point* m1, Mass_Point* m2);
-    sf::Vector2f vector_lenght();                                                   // output the distance in sf::Vector2f between the extremis of the spring
-    sf::Vector2f vector_lenght(Mass_Point* m1, Mass_Point* m2);                     // output the distance in sf::Vector2f between the arguments
+    void update_vector_length();                                                   // output the distance in sf::Vector2f between the extremis of the spring
+    void update_vector_length(Mass_Point* m1, Mass_Point* m2);                     // output the distance in sf::Vector2f between the arguments
+
+    void update_length();
+    void update_length(Mass_Point* m1, Mass_Point* m2);
+
+    float get_length(Mass_Point* m1, Mass_Point* m2) 
+    { update_length(m1, m2); return length; };
 };
 
-/*
-class rope ()
+
+class Rope
 {
+  public:
+
+  Rope(unsigned int point_number, 
+       float mass, 
+       float tension, 
+       float length, 
+       sf::Vector2f position, 
+       Constraint a = DEFAULT_CONSTRAINT, 
+       Constraint b = DEFAULT_CONSTRAINT, 
+       sf::Color color = DEFAULT_COLOR);
   
+  Rope(unsigned int point_number, 
+       float mass, 
+       float tension, 
+       float length, 
+       sf::Vector2f position, 
+       sf::Color color = DEFAULT_COLOR);
+  
+  Rope(Rope left,
+       Rope Right,
+       sf::Color color = DEFAULT_COLOR);
+
+  float get_tension() { update_tension(); return tension; }; // return the current medium tension of the rope
+  float get_length() { update_length(); return length;};  // return the current length of the rope
+  float get_mass() { return mass; }; // return the mass of the rope
+  unsigned int size() { return point_number; };
+
+  void set_constraint(std::string point_name, Constraint constraint = DEFAULT_CONSTRAINT); // take a or b (the extremis)
+  void set_constraint(std::string point_name, bool x, bool y);                             // and set the constraint
+  
+  void set_color(sf::Color color); // change the rope color
+
+  void set_shape(Linear_Shape shape, float oscillation_amplitude); // set the position of the rope, oscillational amplitude
+                                                                   // are to be passed after normalization (as meters)
+
+  Mass_Point get_mass(unsigned int i); // return a copy of the mass at i
+  Spring get_spring(unsigned int i); // return a copy of the spring at i
+
+  sf::Vector2f get_position_at(unsigned int i); // return the position of point i
+  sf::Vector2f get_velocity_at(unsigned int i); // return the velocity of point i
+
+  Spring attach_mass(Mass_Point* mass, float k, unsigned int i);
+
+  void set_x_sliding(bool x = true); // set all mass_point.constraint.x except the first and last
+
+  void add_gravity(Gravity* gravity) { gravity->add(&mass_point); }; // add gravity to all mass_point
+
+
+  void apply(); // apply all springs
+  void update(float time_increment); // update all mass_point positions and velocity
+
 
   private:
-    float head_pos;
-    float tail_pos;
-    float lenght = std::abs(head_pos - tail_pos);
-    int point_number;
-    float total_mass;
 
-}
-*/
+  unsigned int point_number;
+  float length;
+  float mass;
+  float tension;
+  sf::Vector2f position;
+  sf::Color color;
+  Constraint a, b;
+  std::vector<Mass_Point> mass_point;
+  std::vector<Spring> spring;
+
+  void builder(unsigned int point_number, 
+               float mass, 
+               float tension, 
+               float length, 
+               sf::Vector2f position,  
+               Constraint a = DEFAULT_CONSTRAINT, 
+               Constraint b = DEFAULT_CONSTRAINT, 
+               sf::Color color = DEFAULT_COLOR);
+
+  std::vector<Mass_Point> mass_builder();
+  std::vector<Spring> spring_builder();
+  
+  void update_tension();
+  void update_length();
+};
+
+
+struct Linear_Data
+{
+  float amplitude;    // from 0 to 1, fraction of requested height for displacement
+  float width;        // from 0 to 1, fraction of requested length over wich the function will be applied 
+  float repetitions;  // number of repetitions of the function over the width
+};
+
+class Linear_Shape
+{ 
+  public:
+  typedef std::function<void (std::vector<sf::Vector2f>*, float, float)> linear_function;
+
+  Linear_Shape(std::string function_name = DEFAULT_CURRENT_FUNCTION, 
+               float amplitude = DEFAULT_AMPLITUDE,
+               float width = DEFAULT_WIDTH,
+               float repetitions = DEFAULT_REPETITIONS);
+
+  Linear_Shape(float amplitude = DEFAULT_AMPLITUDE,
+               float width = DEFAULT_WIDTH,
+               float repetitions = DEFAULT_REPETITIONS);
+
+  void set_amplitude(float amplitude);
+  void set_repetitions(float repetitions) {this->data.repetitions = repetitions; };
+  void set_width(float width);
+
+  void add_function(std::string name, linear_method foo);
+
+  void change_function(std::string name) { this->current_function = name; };
+
+  void apply(std::vector<sf::Vector2f>* position, float length, float height);
+
+  private:
+
+  std::string current_function;
+  Linear_Data data;
+
+  std::map<std::string, linear_function> functions;
+
+  void builder(std::string function_name = DEFAULT_CURRENT_FUNCTION, 
+               float amplitude = DEFAULT_AMPLITUDE,
+               float width = DEFAULT_WIDTH,
+               float repetitions = DEFAULT_REPETITIONS);
+
+  void function_loader();
+};
+
 
 //!________________________________________________________________________________________________________
 //! MAIN
@@ -151,13 +333,13 @@ int main(int argc, char const *argv[])
   //system("rm results.dat");
   sf::Clock global_clock;
 
-  sf::RenderWindow window(sf::VideoMode(1000, 600), "when will ale-senpai notice me");
+  sf::RenderWindow window(sf::VideoMode(1000, 800), "when will ale-senpai notice me");
 
   std::vector<Mass_Point> mass_point;
   int mass_point_num = 1000;
-  float mass = 1;
-  float k = 56000;
-  float time_increment = 0.001;
+  float mass = 0.0005;
+  float k = 5000;
+  float time_increment = 0.0001f;
   int ipf = 100;
   int normal_mode = 1;
   
@@ -167,14 +349,14 @@ int main(int argc, char const *argv[])
   
   for(int i = 0; i < mass_point_num; ++i)
   {
-    sf::Vector2f position((window.getSize().x/(mass_point_num - 1))*i, window.getSize().y/2);
+    sf::Vector2f position((static_cast<float>(window.getSize().x)/(mass_point_num - 1))*i, static_cast<float>(window.getSize().y)/2);
     Constraint constraint(false, false);
 
     Mass_Point temp(mass, position, constraint);
 
-    position.y -= std::sin((position.x / (window.getSize().x / normal_mode) ) * 3.14) * window.getSize().y / 6;
+    //position.y -= std::sin((position.x / (static_cast<float>(window.getSize().x) / normal_mode) ) * 3.14) * static_cast<float>(window.getSize().y) / 6;
 
-    temp.set_position(position);
+    //temp.set_position(position);
 
     mass_point.push_back(temp);
   }
@@ -210,13 +392,13 @@ int main(int argc, char const *argv[])
 
     for(int j=0; j<ipf; ++j)
     {
-      //gravity.apply();
+      gravity.apply();
 
       for(int i=0; i< springs.size(); ++i)
         springs.at(i).apply();
     
       for(int i = 0; i < mass_point.size(); ++i)
-        mass_point.at(i).update(time_increment, global_time);
+        mass_point.at(i).update(time_increment);
     }
 
     window.clear();
@@ -230,54 +412,64 @@ int main(int argc, char const *argv[])
 }
 
 
-
-
-
 //!______________________________________________________________________________________________________________________________________________________________
 //! class method
 
 //?______________________________________________________________________________________________________________________________________________________________
 //? mass point
 
-Mass_Point::Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint/*, float radius, std::size_t pointCount*/)
+Mass_Point::Mass_Point(float mass, 
+                       sf::Vector2f position, 
+                       sf::Vector2f velocity, 
+                       Constraint constraint, 
+                       sf::Color color)
 {  
-  builder(mass, position, velocity, constraint);
+  builder(mass, position, velocity, constraint, color);
 }   
 
 
-Mass_Point::Mass_Point(float mass, sf::Vector2f position, sf::Vector2f velocity)
- {
-   Constraint constraint(false, false);
-   builder(mass, position, velocity, constraint);
- }
+Mass_Point::Mass_Point(float mass, 
+                       sf::Vector2f position, 
+                       Constraint constraint, 
+                       sf::Color color)
+{
+  builder(mass, position, velocity, constraint, color);
+}
 
-Mass_Point::Mass_Point(float mass, sf::Vector2f position, Constraint constraint)
- {
-   sf::Vector2f velocity(0.0, 0.0);
-   builder(mass, position, velocity, constraint);
- }
+Mass_Point::Mass_Point(float mass, 
+                       sf::Vector2f position, 
+                       sf::Vector2f velocity,
+                       sf::Color color)
+{
+  builder(mass, position, velocity, constraint, color);
+}
 
     
-Mass_Point::Mass_Point(float mass, sf::Vector2f position)
- {
-   Constraint constraint(false, false);
-   sf::Vector2f velocity(0.0, 0.0);
-   builder(mass, position, velocity, constraint);
- }
+Mass_Point::Mass_Point(float mass, 
+                       sf::Vector2f position, 
+                       sf::Color color)
+{
+  builder(mass, position, velocity, constraint, color);
+}
+
+
 
 void
-Mass_Point::builder(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint)
+Mass_Point::builder(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint, sf::Color color)
 {
-  point.setRadius(3.0/*radius*/);
-  point.setPointCount(30/*pointCount*/);
-  point.setOrigin(1.5, 1.5);
+  point.setRadius(DEFAULT_P_RADIUS);
+  point.setPointCount(DEFAULT_C_POINT_COUNT);
+  point.setOrigin(DEFAULT_P_RADIUS / 2 , DEFAULT_P_RADIUS / 2);
   point.setPosition(position);
+  point.setFillColor(color);
 
   this->mass = mass;
   this->velocity = velocity;
   clear_acceleration();
   this->constraint = constraint;
 }
+
+
 
 void
 Mass_Point::clear_acceleration()
@@ -287,7 +479,7 @@ Mass_Point::clear_acceleration()
 }
 
 void
-Mass_Point::update_accelleration(sf::Vector2f acceleration)
+Mass_Point::update_acceleration(sf::Vector2f acceleration)
 {
   this->acceleration.x += acceleration.x;
   this->acceleration.y += acceleration.y;
@@ -306,7 +498,7 @@ Mass_Point::print(sf::Time global_time)
 }
 
 void
-Mass_Point::update(float time_increment, sf::Time global_time)
+Mass_Point::update(float time_increment)
 { 
   if(constraint.x)
     velocity.x = 0.0;
@@ -327,23 +519,27 @@ Mass_Point::update(float time_increment, sf::Time global_time)
   new_position.y += velocity.y * (time_increment * NORMAL_POS);
 
   point.setPosition(new_position);
-
-  //print(global_time);
   
   clear_acceleration();
 }
 
 
-
-
 //?______________________________________________________________________________________________________________________________________________________________
 //? gravity
 
-Gravity::Gravity(std::vector<Mass_Point> *mass_point)
+Gravity::Gravity(std::vector<Mass_Point>* mass_point)
+{
+  this->g.x = 0.0;
+  this->g.y = 9.80665;
+  add(mass_point);
+}
+
+void
+Gravity::add(std::vector<Mass_Point>* mass_point)
 {
   for(int i=0; i<mass_point->size(); ++i)
   {
-    Mass_Point *temp;
+    Mass_Point* temp;
     temp = &mass_point->at(i);
     points.push_back(temp);
     
@@ -351,50 +547,54 @@ Gravity::Gravity(std::vector<Mass_Point> *mass_point)
 }
 
 void
+Gravity::add(Mass_Point* mass_point)
+{
+  points.push_back(mass_point);
+}
+
+void
 Gravity::apply()
 {
   for(int i=0; i<points.size(); ++i)
-  {
-    sf::Vector2f acceleration(0.0 , g);
-    points.at(i)->update_accelleration(acceleration);
-  }
+    points.at(i)->update_acceleration(g);
 }
 
 //?______________________________________________________________________________________________________________________________________________________________
 //? spring
 
 void
-Spring::builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_lenght)
+Spring::builder(float k, Mass_Point* m1, Mass_Point* m2, float rest_length)
 {
   this->k = k;
   this->m1 = m1;
   this->m2 = m2;
-  set_rest_lenght(rest_lenght);
+  set_rest_length(rest_length);
 }
 
-sf::Vector2f
-Spring::vector_lenght() { return vector_lenght(m1, m2); }
+void
+Spring::update_vector_length() { update_vector_length(m1, m2); }
 
-sf::Vector2f
-Spring::vector_lenght(Mass_Point* m1, Mass_Point* m2)
+void
+Spring::update_vector_length(Mass_Point* m1, Mass_Point* m2)
 {
-  sf::Vector2f lenght;
-  lenght.x = abs(m1->get_position().x * 1000 - m2->get_position().x * 1000) / (NORMAL_POS * 1000);
-  lenght.y = abs(m1->get_position().y * 1000 - m2->get_position().y * 1000) / (NORMAL_POS * 1000);
-
-  return lenght;
+  this->vector_length.x = abs(m1->get_position().x * 1000 
+                            - m2->get_position().x * 1000) 
+                            / (NORMAL_POS * 1000);
+  this->vector_length.y = abs(m1->get_position().y * 1000 
+                            - m2->get_position().y * 1000) 
+                            / (NORMAL_POS * 1000);
 }
 
-float
-Spring::lenght() { return lenght(m1, m2); }
+void
+Spring::update_length() { update_length(m1, m2); }
 
-float
-Spring::lenght(Mass_Point* m1, Mass_Point* m2)
+void
+Spring::update_length(Mass_Point* m1, Mass_Point* m2)
 {
-  return sqrt( pow((m1->get_position().x * 1000 
-                  - m2->get_position().x * 1000) / (NORMAL_POS * 1000), 2) 
-             + pow((m1->get_position().y * 1000 
-                  - m2->get_position().y * 1000) / (NORMAL_POS * 1000), 2));
+  this->length = sqrt( pow((m1->get_position().x * 1000 
+                     - m2->get_position().x * 1000) / (NORMAL_POS * 1000), 2) 
+                     + pow((m1->get_position().y * 1000 
+                     - m2->get_position().y * 1000) / (NORMAL_POS * 1000), 2));
 }
 
 void
@@ -402,11 +602,12 @@ Spring::apply()
 {
   sf::Vector2f force;
   sf::Vector2f a1, a2;
-  sf::Vector2f vector_lenght = Spring::vector_lenght();
-  float lenght = Spring::lenght();
+  
+  update_length();
+  update_vector_length();
 
-  force.x = (lenght - rest_lenght) * k * (vector_lenght.x / lenght);
-  force.y = (lenght - rest_lenght) * k * (vector_lenght.y / lenght);
+  force.x = (length - rest_length) * k * (vector_length.x / length);
+  force.y = (length - rest_length) * k * (vector_length.y / length);
 
   a1 = (force / m1->get_mass());
   a2 = ((-force) / m2->get_mass());
@@ -423,6 +624,419 @@ Spring::apply()
     a2.y *= (-1); 
   } 
 
-  m1->update_accelleration(a1);
-  m2->update_accelleration(a2);
+  m1->update_acceleration(a1);
+  m2->update_acceleration(a2);
+}
+
+//? ________________________________________________________________________________________________________
+//? Rope
+
+Rope::Rope(unsigned int point_number, 
+           float mass, 
+           float tension, 
+           float length, 
+           sf::Vector2f position , 
+           Constraint a, 
+           Constraint b, 
+           sf::Color color)
+{
+  builder(point_number, mass, 
+          tension, length, position, 
+          a, 
+          b, 
+          color);
+}
+
+Rope::Rope(unsigned int point_number, 
+           float mass, 
+           float tension, 
+           float length, 
+           sf::Vector2f position, 
+           sf::Color color)
+{
+  builder(point_number, mass, tension, 
+          length, position,
+           a, 
+           b, 
+           color);
+}
+
+Rope::Rope(Rope left, Rope right, sf::Color color)
+{
+  for(int i = 0; i < left.size(); ++i)
+    this->mass_point.push_back(left.get_mass(i));
+  
+  mass_point.at(left.size()-1).set_constraint();
+
+  for(int i = 0; i < right.size(); ++i)
+    this->mass_point.push_back(right.get_mass(i));
+
+  mass_point.at(left.size()).set_constraint();
+
+  for(int i = 0; i < left.size() -1; ++i)
+    this->spring.push_back(left.get_spring(i));
+
+  Spring temp(this->spring.at(0).get_k(),
+              &mass_point.at(left.size() -1),
+              &mass_point.at(left.size()));
+
+  spring.push_back(temp);
+
+  for(int i = 0; i < right.size() -1; ++i)
+    this->spring.push_back(right.get_spring(i));
+
+  this->point_number = mass_point.size();
+  this->mass = left.get_mass() + right.get_mass();
+  update_tension();
+  update_length();
+  this->position = mass_point.at(0).get_position();
+  this->a = mass_point.front().get_constraint();
+  this->b = mass_point.back().get_constraint();
+  this->color = color; 
+}
+
+void 
+Rope::builder(unsigned int point_number, float mass, float tension, 
+              float length, sf::Vector2f position,  
+              Constraint a, Constraint b, sf::Color color)
+{
+  this->point_number = point_number;
+  this->mass = mass;
+  this->length = length * NORMAL_POS;
+  this->tension = tension;
+  this->length = length;
+  this->position = position;
+  this->a = a; 
+  this->b = b;
+  this->color = color;
+
+  this->mass_point = mass_builder();
+  this->spring = spring_builder();
+}
+
+std::vector<Mass_Point> 
+Rope::mass_builder()
+{
+  std::vector<Mass_Point> mass_point;
+
+  for(int i = 0; i < point_number; ++i)
+  {
+    sf::Vector2f temp_pos(position.x + i * length / point_number, position.y);
+    
+    Mass_Point temp(mass / point_number, temp_pos, color);
+ 
+    mass_point.push_back(temp);
+  }
+
+  mass_point.front().set_constraint(a);
+  mass_point.back().set_constraint(b);
+
+  return mass_point;
+}
+
+std::vector<Spring>
+Rope::spring_builder()
+{
+  std::vector<Spring> spring;
+  float k = (tension / length) * point_number;
+
+  for(int i = 0; i < mass_point.size() - 1 ; ++i)
+  {
+    Spring temp(k, &mass_point.at(i), &mass_point.at(i+1));
+
+    spring.push_back(temp);
+  }
+
+  return spring;
+}
+
+void
+Rope::update_tension()
+{
+  float force = 0.0f;
+
+  for(int i = 0; i < spring.size(); ++i)
+    force = force * (i / i+1) + 
+            spring.at(i).get_k() * 
+            spring.at(i).get_length() / 
+            (i+1);   
+  
+  this->tension = force;
+}
+
+void
+Rope::update_length()
+{
+  this->length = 0;
+
+  for(auto i: spring)
+    this->length += i.get_length();
+}
+
+void
+Rope::set_constraint(std::string point_name, bool x, bool y)
+{
+  Constraint constraint(x, y);
+  set_constraint(point_name, constraint);
+}
+
+void
+Rope::set_constraint(std::string point_name, Constraint constraint)
+{
+  const char* name = point_name.c_str();
+  if(*name == 'a')
+    this->a = constraint;
+  else if(*name == 'b')
+    this->b = constraint;
+}
+
+void
+Rope::set_color(sf::Color color)
+{
+  for(int i = 0; i < mass_point.size(); ++i)
+    mass_point.at(i).set_color(color);
+}
+
+void
+Rope::set_shape(Linear_Shape shape, float oscillation_amplitude)
+{
+  std::vector<sf::Vector2f> new_position;
+
+  for(int i = 0; i < mass_point.size(); ++i)
+    new_position.push_back(mass_point.at(i).get_position());
+
+  shape.apply(&new_position, length,
+              oscillation_amplitude * NORMAL_POS);
+
+  for(int i = 0; i < new_position.size(); ++i)
+    mass_point.at(i).set_position(new_position.at(i));
+}
+
+Mass_Point
+Rope::get_mass(unsigned int i)
+{
+  if(i > point_number)
+    i = point_number -1;  
+
+  return this->mass_point.at(i); 
+};
+
+
+Spring
+Rope::get_spring(unsigned int i)
+{  
+  if(i > point_number)
+    i = point_number -1;
+
+   return this->spring.at(i); 
+};
+
+
+sf::Vector2f
+Rope::get_position_at(unsigned int i)
+{
+  if(i > point_number)
+    i = point_number -1;
+
+
+  return this->mass_point.at(i).get_position(); 
+};
+
+sf::Vector2f
+Rope::get_velocity_at(unsigned int i)
+{ 
+  if(i > point_number)
+    i = point_number -1;
+
+  return this->mass_point.at(i).get_velocity(); 
+};
+
+
+Spring
+Rope::attach_mass(Mass_Point* mass, float k, unsigned int i)
+{
+  if(i > point_number)
+    i = point_number -1;
+
+  Spring new_spring(k, mass, &mass_point.at(i));
+
+  return new_spring;
+}
+
+void
+Rope::set_x_sliding(bool x)
+{
+  for(int i = 1; i < mass_point.size() - 1; ++i)
+    mass_point.at(i).set_constraint(!x, mass_point.at(i).get_constraint().y);
+}
+
+void
+Rope::apply()
+{
+  for(int i = 0; i < spring.size(); ++i)
+    spring.at(i).apply();
+}
+
+void
+Rope::update(float time_increment)
+{
+  for(int i = 0; i < mass_point.size(); ++i)
+    mass_point.at(i).update(time_increment);
+
+  this->position = get_position_at(0);
+}
+
+//? ________________________________________________________________________________________________________
+//? Linear_Shape
+
+Linear_Shape::Linear_Shape(std::string function_name,
+                           float amplitude, 
+                           float width, 
+                           float repetitions)
+{
+  builder(function_name, amplitude, width, repetitions);
+}
+
+Linear_Shape::Linear_Shape(float amplitude,
+             float width,
+             float repetitions)
+{
+  builder(DEFAULT_CURRENT_FUNCTION, amplitude, width, repetitions);
+}
+
+void
+Linear_Shape::builder(std::string function_name, 
+                      float amplitude,
+                      float width,
+                      float repetitions)
+{
+  this->current_function = function_name;
+  this->data = {amplitude, width, repetitions};
+
+  function_loader();  
+}
+
+
+
+void
+Linear_Shape::set_amplitude(float amplitude)
+{
+  if(amplitude > 1)
+    amplitude = 1;
+  else if(amplitude < 0)
+    amplitude = 0;
+
+  this->data.amplitude = amplitude;
+}
+
+void
+Linear_Shape::set_width(float width)
+{
+  if(width > 1)
+    width = 1;
+  else if(width < 0)
+    width = 0;
+
+  this->data.width = width;
+}
+
+
+void
+Linear_Shape::add_function(std::string name, linear_method foo)
+{
+  functions[name] = [this, foo](std::vector<sf::Vector2f>* position, float length, float height)
+  { foo(position, length, height, data); };
+}
+
+void
+Linear_Shape::apply(std::vector<sf::Vector2f>* position, float length, float height)
+{
+    functions[current_function](position, length, height);
+}
+
+
+
+void
+Linear_Shape::function_loader()
+{
+  // line distribution
+  add_function("line",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    for(int i = 0; i < position->size(); ++i)
+      position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+  });
+
+  add_function("sine",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    for(int i = 0; i < position->size(); ++i)
+    {
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
+      {
+        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+        position->at(i).y = position->at(0).y - std::sin((position->at(i).x / data.repetitions * M_PI)) * height * data.amplitude / 2;
+      }
+      else
+      {
+        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      }
+    }
+  });
+
+  add_function("cosine",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    for(int i = 0; i < position->size(); ++i)
+    {
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
+      {
+        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+        position->at(i).y = position->at(0).y - std::cos((position->at(i).x / data.repetitions * M_PI)) * height * data.amplitude / 2;
+      }
+      else
+      {
+        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      }
+    }
+  });
+
+  add_function("square",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    sf::Vector2f pos0 = position->at(0);
+
+    for(int i = 0; i < position->size(); ++i)
+    {
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
+      {
+        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+        
+        for(int j = 0; j < data.repetitions; ++j)
+        {
+          if(position->at(i).x < (length * data.width / data.repetitions) / 2)
+            position->at(i).y = pos0.y - height * data.amplitude / 2;
+        
+          else
+            position->at(i).y = pos0.y + height * data.amplitude / 2;
+        }
+      }
+      else
+      {
+        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      }
+    }
+  });
+
+  add_function("triangle",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    
+  });
+
+  add_function("simpleton",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    
+  });
 }

@@ -1012,14 +1012,12 @@ Linear_Shape::function_loader()
       {
         position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
         
-        for(int j = 0; j < data.repetitions; ++j)
-        {
-          if(position->at(i).x < (length * data.width / data.repetitions) / 2)
-            position->at(i).y = pos0.y - height * data.amplitude / 2;
+        if(position->at(i).x < (length * data.width / data.repetitions) / 2)
+          position->at(i).y = pos0.y - height * data.amplitude / 2;
         
-          else
-            position->at(i).y = pos0.y + height * data.amplitude / 2;
-        }
+        else
+          position->at(i).y = pos0.y + height * data.amplitude / 2;
+        
       }
       else
       {
@@ -1031,12 +1029,25 @@ Linear_Shape::function_loader()
   add_function("triangle",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
-    
-  });
+    sf::Vector2f pos0 = position->at(0);
 
-  add_function("simpleton",
-  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
-  {
-    
+    for(int i = 0; i < position->size(); ++i)
+    {
+      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
+      {
+        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+        
+        if(position->at(i).x < (length * data.width / data.repetitions) / 2)
+          position->at(i).y = pos0.y - height * data.amplitude * (2 * i *data.repetitions - std::floor(2 * i * sf::M_PI)) / 2;
+        
+        else
+          position->at(i).y = pos0.y + height * data.amplitude * (2 * i *data.repetitions - std::floor(2 * i * sf::M_PI)) / 2;
+      
+      }
+      else
+      {
+        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      }
+    }
   });
 }

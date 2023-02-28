@@ -141,6 +141,7 @@ class Gravity
   public:
 
   Gravity(std::vector<Mass_Point>* mass_point);
+  Gravity();
 
   void add(std::vector<Mass_Point>* mass_point);
   void add(Mass_Point* mass_point);
@@ -333,46 +334,31 @@ int main(int argc, char const *argv[])
   //system("rm results.dat");
   sf::Clock global_clock;
 
-  sf::RenderWindow window(sf::VideoMode(1000, 800), "when will ale-senpai notice me");
+  sf::RenderWindow window(sf::VideoMode(1000, 800), "Vibrating string simulation");
 
-  std::vector<Mass_Point> mass_point;
-  int mass_point_num = 1000;
-  float mass = 0.0005;
-  float k = 5000;
+  unsigned int mass_point_num = 1000;
+  float mass = 5.0f;
   float time_increment = 0.0001f;
   int ipf = 100;
-  int normal_mode = 1;
-  
+  float tension = 1.0f;
+  float length = 1.0f;
+  sf::Vector2f initial_pos(0.0f,400.0f);
+  Constraint constraint(true, true);
+
+  Linear_Shape shape("square", 1.0f, 1.0f, 1.0f);
+
+  Rope rope(mass_point_num, mass, tension, length, initial_pos, constraint, constraint);
+
+  rope.set_shape(shape, 0.5f);
+
+  Gravity gravity;
+
+  //rope.add_gravity(&gravity);
+
   sf::Time global_time;
   sf::Time time;
   sf::Clock clock;
   
-  for(int i = 0; i < mass_point_num; ++i)
-  {
-    sf::Vector2f position((static_cast<float>(window.getSize().x)/(mass_point_num - 1))*i, static_cast<float>(window.getSize().y)/2);
-    Constraint constraint(false, false);
-
-    Mass_Point temp(mass, position, constraint);
-
-    //position.y -= std::sin((position.x / (static_cast<float>(window.getSize().x) / normal_mode) ) * 3.14) * static_cast<float>(window.getSize().y) / 6;
-
-    //temp.set_position(position);
-
-    mass_point.push_back(temp);
-  }
-
-  Gravity gravity(&mass_point);
-  std::vector<Spring> springs;
-
-  for(int i=0; i<mass_point_num-1; ++i)
-  {
-    Spring spring(k, &mass_point.at(i), &mass_point.at(i+1));
-    springs.push_back(spring);
-  }
-  
-  mass_point.at(0).set_constraint(true, true);
-  mass_point.at(mass_point_num-1).set_constraint(true, true);
-
   clock.restart();
   global_clock.restart();
   //_________________________________________________________________________________________________________
@@ -392,18 +378,15 @@ int main(int argc, char const *argv[])
 
     for(int j=0; j<ipf; ++j)
     {
-      gravity.apply();
-
-      for(int i=0; i< springs.size(); ++i)
-        springs.at(i).apply();
-    
-      for(int i = 0; i < mass_point.size(); ++i)
-        mass_point.at(i).update(time_increment);
+      rope.apply();
+      rope.update(time_increment);
     }
 
+    gravity.apply();
+
     window.clear();
-    for(auto i: mass_point)
-      window.draw(i.point);
+    for(unsigned int i=0; i<rope.size(); ++i)
+      window.draw(rope.get_mass(i).point);
     window.display();
   }
 
@@ -532,6 +515,12 @@ Gravity::Gravity(std::vector<Mass_Point>* mass_point)
   this->g.x = 0.0;
   this->g.y = 9.80665;
   add(mass_point);
+}
+
+Gravity::Gravity()
+{
+  this->g.x = 0.0;
+  this->g.y = 9.80665;
 }
 
 void
@@ -815,7 +804,7 @@ Rope::set_shape(Linear_Shape shape, float oscillation_amplitude)
 Mass_Point
 Rope::get_mass(unsigned int i)
 {
-  if(i > point_number)
+  if(i >= point_number)
     i = point_number -1;  
 
   return this->mass_point.at(i); 
@@ -825,7 +814,7 @@ Rope::get_mass(unsigned int i)
 Spring
 Rope::get_spring(unsigned int i)
 {  
-  if(i > point_number)
+  if(i >= point_number)
     i = point_number -1;
 
    return this->spring.at(i); 
@@ -835,7 +824,7 @@ Rope::get_spring(unsigned int i)
 sf::Vector2f
 Rope::get_position_at(unsigned int i)
 {
-  if(i > point_number)
+  if(i >= point_number)
     i = point_number -1;
 
 
@@ -845,7 +834,7 @@ Rope::get_position_at(unsigned int i)
 sf::Vector2f
 Rope::get_velocity_at(unsigned int i)
 { 
-  if(i > point_number)
+  if(i >= point_number)
     i = point_number -1;
 
   return this->mass_point.at(i).get_velocity(); 
@@ -855,7 +844,7 @@ Rope::get_velocity_at(unsigned int i)
 Spring
 Rope::attach_mass(Mass_Point* mass, float k, unsigned int i)
 {
-  if(i > point_number)
+  if(i >= point_number)
     i = point_number -1;
 
   Spring new_spring(k, mass, &mass_point.at(i));
@@ -970,12 +959,12 @@ Linear_Shape::function_loader()
   add_function("sine",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
-    for(int i = 0; i < position->size(); ++i)
+    for(int i = 1; i < position->size(); ++i)
     {
       if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
       {
-        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
-        position->at(i).y = position->at(0).y - std::sin((position->at(i).x / data.repetitions * M_PI)) * height * data.amplitude / 2;
+        position->at(i).x = position->at(0).x + static_cast<float>(i) * length * (NORMAL_POS / static_cast<float>(position->size()));
+        position->at(i).y = position->at(0).y - std::sin( static_cast<float>(i) / position->size() / data.width * data.repetitions * 2.0f * M_PI) * height * data.amplitude / 2.0f;
       }
       else
       {
@@ -1004,25 +993,25 @@ Linear_Shape::function_loader()
   add_function("square",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
-    sf::Vector2f pos0 = position->at(0);
-
-    for(int i = 0; i < position->size(); ++i)
+    for(int i = 1; i < position->size(); ++i)
     {
       if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
       {
-        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
+       position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
         
-        if(position->at(i).x < (length * data.width / data.repetitions) / 2)
-          position->at(i).y = pos0.y - height * data.amplitude / 2;
-        
+        if(position->at(0).y - std::sin(static_cast<float>(i) / position->size() / data.width * data.repetitions * 2.0f * M_PI) < position->at(0).y)
+          position->at(i).y = position->at(0).y - (height * data.amplitude / 2.0f);
+
         else
-          position->at(i).y = pos0.y + height * data.amplitude / 2;
-        
+          position->at(i).y = position->at(0).y + (height * data.amplitude / 2.0f);
+
       }
       else
       {
         position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
       }
+
+      position->at(position->size()-1).y = position->at(0).y;
     }
   });
 
@@ -1038,10 +1027,10 @@ Linear_Shape::function_loader()
         position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
         
         if(position->at(i).x < (length * data.width / data.repetitions) / 2)
-          position->at(i).y = pos0.y - height * data.amplitude * (2 * i *data.repetitions - std::floor(2 * i * sf::M_PI)) / 2;
+          position->at(i).y = pos0.y - height * data.amplitude * (2 * i *data.repetitions - std::floor(2 * i * M_PI)) / 2;
         
         else
-          position->at(i).y = pos0.y + height * data.amplitude * (2 * i *data.repetitions - std::floor(2 * i * sf::M_PI)) / 2;
+          position->at(i).y = pos0.y + height * data.amplitude * (2 * i *data.repetitions - std::floor(2 * i * M_PI)) / 2;
       
       }
       else

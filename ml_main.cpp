@@ -18,7 +18,7 @@
 // for Spring
 #define DEFAULT_REST_L 0.0f
 
-//for Linear_Shape
+// for Linear_Shape
 struct Linear_Data;
 
 #define DEFAULT_AMPLITUDE 1.0f
@@ -31,6 +31,10 @@ typedef std::function<void (std::vector<sf::Vector2f>*, float, float, Linear_Dat
 // for multiple classes
 #define DEFAULT_CONSTRAINT Constraint()
 #define DEFAULT_COLOR sf::Color::White
+
+// for FFT
+#define CAMPIONAMENTO_POSIZIONE 10.0f
+#define CAMPIONAMENTO_TEMPO 1.0f
 
 
 // Classes
@@ -327,48 +331,57 @@ class Linear_Shape
   void function_loader();
 };
 
+class Data
+{
+  public:
+    Data() {};
+    ~Data() {};
+
+    void add_time(float time) {this->time.push_back(time);};
+    void add_position(sf::Vector2f position) {this->position.push_back(position);};
+
+  private:
+    std::vector<float> time;
+    std::vector<sf::Vector2f> position;
+
+};
+
 
 //!________________________________________________________________________________________________________
 //! MAIN
 
 int main(int argc, char const *argv[])
 {
-  //system("rm results.dat");
   sf::Clock global_clock;
 
   sf::RenderWindow window(sf::VideoMode(1000, 800), "Vibrating string simulation");
 
   unsigned int mass_point_num = 1000;
-  float mass1 = 5.0f;
-  float mass2 = 1.0f;
+  float mass = 5.0f;
   float time_increment = 0.00001f;
-  int ipf = 100;
+  float simulation_time = 0.0f;
   float tension = 20.0f;
-  float length = 0.625f;
-  sf::Vector2f initial_pos1(0.0f,400.0f);
-  sf::Vector2f initial_pos2(500.0f,400.0f);
-  Constraint constraint_a(true, false);
-  Constraint constraint_b(true, false);
+  float length = 1.25f;
+  sf::Vector2f initial_pos(0.0f,400.0f);
+  Constraint constraint_a(true, true);
+  Constraint constraint_b(true, true);
+  std::vector<Data> data();
 
   //amplitude, width, repetitions
-  Linear_Shape shape("wave", 1.0f, 0.25f, 1.0f);
-  Linear_Shape line("line");
+  Linear_Shape shape("sine", 1.0f, 1.0f, 1.0f);
 
-  Rope rope1(mass_point_num, mass1, tension, length, initial_pos1, constraint_a, constraint_b);
-  Rope rope2(mass_point_num, mass2, tension, length, initial_pos2, constraint_a, constraint_b);
+  Rope rope(mass_point_num, mass, tension, length, initial_pos, constraint_a, constraint_b);
 
-  rope1.set_shape(shape, 0.5f);
-  rope2.set_shape(line,0.0f);
 
-  Rope rope(&rope1, &rope2);
+  rope.set_shape(shape, 0.5f);
 
   //Gravity gravity;
-
   //rope.add_gravity(&gravity);
 
   sf::Time global_time;
   sf::Time time;
   sf::Clock clock;
+  int cycle = 0;
   
   clock.restart();
   global_clock.restart();
@@ -387,21 +400,33 @@ int main(int argc, char const *argv[])
       if(event.type == sf::Event::Closed) 
         window.close();
 
-    for(int j=0; j<ipf; ++j)
+    while(clock.getElapsedTime() < sf::milliseconds(33))
     {
       rope.apply();
       rope.update(time_increment);
+      simulation_time += time_increment;
     }
 
     //gravity.apply();
 
     window.clear();
+
     for(unsigned int i=0; i<rope.size(); ++i)
+    {
       window.draw(rope.get_mass(i).point);
+
+      if(simulation_time % CAMPIONAMENTO_TEMPO == 0)
+        if(i%(mass_point_num/CAMPIONAMENTO_POSIZIONE) == 0)
+        {
+          data.at(std::floor(i/(mass_point_num/CAMPIONAMENTO_POSIZIONE))).add_time(simulation_time);
+          data.at(std::floor(i/(mass_point_num/CAMPIONAMENTO_POSIZIONE))).add_position(rope.get_position_at(i));
+        }
+    }
+
     window.display();
+  
   }
 
-  //system("code results.dat");
   return 0;
 }
 

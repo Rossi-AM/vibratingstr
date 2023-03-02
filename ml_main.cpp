@@ -168,7 +168,8 @@ class Spring
       { builder(k, m1, m2, get_length(m1, m2)); }
 
 
-    void set_rest_length(float rest_length) { this->rest_length = rest_length;};
+    void set_rest_length(float rest_length) { this->rest_length = rest_length; };
+    void set_k(float k) { this->k = k; };
     float get_k() { return k; };
     float get_length() { update_length(); return length;};
 
@@ -216,8 +217,8 @@ class Rope
        sf::Vector2f position, 
        sf::Color color = DEFAULT_COLOR);
   
-  Rope(Rope left,
-       Rope Right,
+  Rope(Rope* left,
+       Rope* Right,
        sf::Color color = DEFAULT_COLOR);
 
   float get_tension() { update_tension(); return tension; }; // return the current medium tension of the rope
@@ -225,8 +226,8 @@ class Rope
   float get_mass() { return mass; }; // return the mass of the rope
   unsigned int size() { return point_number; };
 
-  void set_constraint(std::string point_name, Constraint constraint = DEFAULT_CONSTRAINT); // take a or b (the extremis)
-  void set_constraint(std::string point_name, bool x, bool y);                             // and set the constraint
+  void set_constraint(unsigned int i, Constraint constraint = DEFAULT_CONSTRAINT); // take a or b (the extremis)
+  void set_constraint(unsigned int i, bool x, bool y);                             // and set the constraint
   
   void set_color(sf::Color color); // change the rope color
 
@@ -338,30 +339,28 @@ int main(int argc, char const *argv[])
   sf::RenderWindow window(sf::VideoMode(1000, 800), "Vibrating string simulation");
 
   unsigned int mass_point_num = 1000;
-  float mass1 = 1.0f;
-  float mass2 = 5.0f;
+  float mass1 = 5.0f;
+  float mass2 = 1.0f;
   float time_increment = 0.00001f;
   int ipf = 100;
-  float tension = 5.0f;
+  float tension = 20.0f;
   float length = 0.625f;
   sf::Vector2f initial_pos1(0.0f,400.0f);
   sf::Vector2f initial_pos2(500.0f,400.0f);
   Constraint constraint_a(true, false);
-  Constraint constraint_b(true, true);
+  Constraint constraint_b(true, false);
 
   //amplitude, width, repetitions
-  Linear_Shape shape("sine", 1.0f, 0.25f, 1.0f);
+  Linear_Shape shape("wave", 1.0f, 0.25f, 1.0f);
   Linear_Shape line("line");
 
   Rope rope1(mass_point_num, mass1, tension, length, initial_pos1, constraint_a, constraint_b);
   Rope rope2(mass_point_num, mass2, tension, length, initial_pos2, constraint_a, constraint_b);
 
-  rope1.set_shape(shape, 0.25f);
+  rope1.set_shape(shape, 0.5f);
   rope2.set_shape(line,0.0f);
 
-  Rope rope(rope1, rope2);
-
-  std::cout << rope1.get_tension() << std::endl;
+  Rope rope(&rope1, &rope2);
 
   //Gravity gravity;
 
@@ -662,46 +661,61 @@ Rope::Rope(unsigned int point_number,
            color);
 }
 
-Rope::Rope(Rope left, Rope right, sf::Color color)
+Rope::Rope(Rope* left, Rope* right, sf::Color color)
 {
-  this->a = left.get_mass(0).get_constraint();
-  this->b = right.get_mass(right.size() -1).get_constraint();
+  this->a = left->get_mass(0).get_constraint();
+  this->b = right->get_mass(right->size() -1).get_constraint();
 
-  left.set_constraint("a");
-  left.set_constraint("b");
-  right.set_constraint("a");
-  left.set_constraint("b");
+  for(int i = 0; i < left->size(); ++i)
+  {
+    this->mass_point.push_back(left->get_mass(i));
+    this->mass_point.back().set_constraint();
+  }
 
-  for(int i = 0; i < left.size(); ++i)
-    this->mass_point.push_back(left.get_mass(i));
-  
-  mass_point.at(left.size()-1).set_constraint();
+  for(int i = 0; i < right->size(); ++i)
+  {
+    this->mass_point.push_back(right->get_mass(i));
+    this->mass_point.back().set_constraint();
+  }
 
-  for(int i = 0; i < right.size(); ++i)
-    this->mass_point.push_back(right.get_mass(i));
+  for(int i=0; i<left->size()-1; ++i)
+  {
+    Spring temp(left->get_spring(i).get_k(), 
+                &mass_point.at(i), 
+                &mass_point.at(i+1));
 
-  mass_point.at(left.size()).set_constraint();
+    this->spring.push_back(temp);
+  }
 
-  for(int i = 0; i < left.size() -1; ++i)
-    this->spring.push_back(left.get_spring(i));
+  {
+    Spring temp(0, 
+                &mass_point.at(left->size()-1), 
+                &mass_point.at(left->size()));
+    
+    temp.set_k((left->get_tension() 
+               + right->get_tension()) 
+               / 2.0f / temp.get_length());
 
-  Spring temp(this->spring.at(0).get_k(),
-              &mass_point.at(left.size() -1),
-              &mass_point.at(left.size()));
+    this->spring.push_back(temp);
+  }
 
-  spring.push_back(temp);
+  for(int i=0; i<right->size()-1; ++i)
+  {
+    Spring temp(right->get_spring(i).get_k(), 
+                &mass_point.at(left->size() + i), 
+                &mass_point.at(left->size() + i+1));
 
-  for(int i = 0; i < right.size() -1; ++i)
-    this->spring.push_back(right.get_spring(i));
+    this->spring.push_back(temp);
+  }
 
   this->point_number = mass_point.size();
-  this->mass = left.get_mass() + right.get_mass();
+  this->mass = left->get_mass() + right->get_mass();
   update_tension();
   update_length();
   this->position = mass_point.at(0).get_position();
   this->color = color; 
-  set_constraint("a");
-  set_constraint("b");
+  set_constraint(0, a);
+  set_constraint(point_number - 1, b);
 }
 
 void 
@@ -715,7 +729,7 @@ Rope::builder(unsigned int point_number, float mass, float tension,
   this->tension = tension;
   this->length = length;
   this->position = position;
-  this->a = a; 
+  this->a = a;
   this->b = b;
   this->color = color;
 
@@ -765,12 +779,14 @@ Rope::update_tension()
   float force = 0.0f;
 
   for(int i = 0; i < spring.size(); ++i)
-    force = force * (i / i+1) + 
-            spring.at(i).get_k() * 
-            spring.at(i).get_length() / 
-            (i+1);   
-  
-  this->tension = force;
+  {
+    force  = force * (i / (i+1)) 
+           + spring.at(i).get_k() * 
+             spring.at(i).get_length() / 
+             (i+1);   
+  }
+
+  this->tension = force * spring.size();
 }
 
 void
@@ -783,20 +799,19 @@ Rope::update_length()
 }
 
 void
-Rope::set_constraint(std::string point_name, bool x, bool y)
+Rope::set_constraint(unsigned int i, bool x, bool y)
 {
   Constraint constraint(x, y);
-  set_constraint(point_name, constraint);
+  set_constraint(i, constraint);
 }
 
 void
-Rope::set_constraint(std::string point_name, Constraint constraint)
+Rope::set_constraint(unsigned int i, Constraint constraint)
 {
-  const char* name = point_name.c_str();
-  if(*name == 'a')
-    this->a = constraint;
-  else if(*name == 'b')
-    this->b = constraint;
+  if(i >= point_number)
+    i = point_number-1;
+
+  this->mass_point.at(i).set_constraint(constraint);
 }
 
 void

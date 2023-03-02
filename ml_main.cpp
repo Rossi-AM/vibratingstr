@@ -342,7 +342,6 @@ int main(int argc, char const *argv[])
   float mass1 = 5.0f;
   float mass2 = 1.0f;
   float time_increment = 0.00001f;
-  int ipf = 100;
   float tension = 20.0f;
   float length = 0.625f;
   sf::Vector2f initial_pos1(0.0f,400.0f);
@@ -351,7 +350,7 @@ int main(int argc, char const *argv[])
   Constraint constraint_b(true, false);
 
   //amplitude, width, repetitions
-  Linear_Shape shape("wave", 1.0f, 0.25f, 1.0f);
+  Linear_Shape shape("wave", 1.0f, 0.1f, 1.0f);
   Linear_Shape line("line");
 
   Rope rope1(mass_point_num, mass1, tension, length, initial_pos1, constraint_a, constraint_b);
@@ -387,7 +386,7 @@ int main(int argc, char const *argv[])
       if(event.type == sf::Event::Closed) 
         window.close();
 
-    for(int j=0; j<ipf; ++j)
+    while(clock.getElapsedTime() < sf::milliseconds(33))
     {
       rope.apply();
       rope.update(time_increment);

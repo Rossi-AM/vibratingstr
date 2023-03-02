@@ -13,7 +13,7 @@
 
 // for Mass_Point
 #define DEFAULT_VEL sf::Vector2f(0.0f, 0.0f)
-#define NORMAL_POS 800.0f                       // 800 pixels = 1 meter
+#define LENGHT_UNIT 800.0f                       // 800 pixels = 1 meter
 
 // for Spring
 #define DEFAULT_REST_L 0.0f
@@ -168,7 +168,8 @@ class Spring
       { builder(k, m1, m2, get_length(m1, m2)); }
 
 
-    void set_rest_length(float rest_length) { this->rest_length = rest_length;};
+    void set_rest_length(float rest_length) { this->rest_length = rest_length; };
+    void set_k(float k) { this->k = k; };
     float get_k() { return k; };
     float get_length() { update_length(); return length;};
 
@@ -216,8 +217,8 @@ class Rope
        sf::Vector2f position, 
        sf::Color color = DEFAULT_COLOR);
   
-  Rope(Rope left,
-       Rope Right,
+  Rope(Rope* left,
+       Rope* Right,
        sf::Color color = DEFAULT_COLOR);
 
   float get_tension() { update_tension(); return tension; }; // return the current medium tension of the rope
@@ -225,8 +226,8 @@ class Rope
   float get_mass() { return mass; }; // return the mass of the rope
   unsigned int size() { return point_number; };
 
-  void set_constraint(std::string point_name, Constraint constraint = DEFAULT_CONSTRAINT); // take a or b (the extremis)
-  void set_constraint(std::string point_name, bool x, bool y);                             // and set the constraint
+  void set_constraint(unsigned int i, Constraint constraint = DEFAULT_CONSTRAINT); // take a or b (the extremis)
+  void set_constraint(unsigned int i, bool x, bool y);                             // and set the constraint
   
   void set_color(sf::Color color); // change the rope color
 
@@ -310,6 +311,7 @@ class Linear_Shape
 
   void apply(std::vector<sf::Vector2f>* position, float length, float height);
 
+
   private:
 
   std::string current_function;
@@ -337,6 +339,7 @@ int main(int argc, char const *argv[])
   sf::RenderWindow window(sf::VideoMode(1000, 800), "Vibrating string simulation");
 
   unsigned int mass_point_num = 1000;
+<<<<<<< HEAD
   float mass = 5.0f;
   float time_increment = 0.0001f;
   int ipf = 100;
@@ -355,6 +358,35 @@ int main(int argc, char const *argv[])
 
   //rope.add_gravity(&gravity);
 
+=======
+  float mass1 = 5.0f;
+  float mass2 = 1.0f;
+  float time_increment = 0.00001f;
+  int ipf = 100;
+  float tension = 20.0f;
+  float length = 0.625f;
+  sf::Vector2f initial_pos1(0.0f,400.0f);
+  sf::Vector2f initial_pos2(500.0f,400.0f);
+  Constraint constraint_a(true, false);
+  Constraint constraint_b(true, false);
+
+  //amplitude, width, repetitions
+  Linear_Shape shape("wave", 1.0f, 0.25f, 1.0f);
+  Linear_Shape line("line");
+
+  Rope rope1(mass_point_num, mass1, tension, length, initial_pos1, constraint_a, constraint_b);
+  Rope rope2(mass_point_num, mass2, tension, length, initial_pos2, constraint_a, constraint_b);
+
+  rope1.set_shape(shape, 0.5f);
+  rope2.set_shape(line,0.0f);
+
+  Rope rope(&rope1, &rope2);
+
+  //Gravity gravity;
+
+  //rope.add_gravity(&gravity);
+
+>>>>>>> 253d62a5fa40ee0280af2152bb193667a0bc3f3a
   sf::Time global_time;
   sf::Time time;
   sf::Clock clock;
@@ -382,7 +414,11 @@ int main(int argc, char const *argv[])
       rope.update(time_increment);
     }
 
+<<<<<<< HEAD
     gravity.apply();
+=======
+    //gravity.apply();
+>>>>>>> 253d62a5fa40ee0280af2152bb193667a0bc3f3a
 
     window.clear();
     for(unsigned int i=0; i<rope.size(); ++i)
@@ -498,8 +534,8 @@ Mass_Point::update(float time_increment)
 
   sf::Vector2f new_position = point.getPosition();
   
-  new_position.x += velocity.x * (time_increment * NORMAL_POS);
-  new_position.y += velocity.y * (time_increment * NORMAL_POS);
+  new_position.x += velocity.x * (time_increment * LENGHT_UNIT);
+  new_position.y += velocity.y * (time_increment * LENGHT_UNIT);
 
   point.setPosition(new_position);
   
@@ -568,10 +604,10 @@ Spring::update_vector_length(Mass_Point* m1, Mass_Point* m2)
 {
   this->vector_length.x = abs(m1->get_position().x * 1000 
                             - m2->get_position().x * 1000) 
-                            / (NORMAL_POS * 1000);
+                            / (LENGHT_UNIT * 1000);
   this->vector_length.y = abs(m1->get_position().y * 1000 
                             - m2->get_position().y * 1000) 
-                            / (NORMAL_POS * 1000);
+                            / (LENGHT_UNIT * 1000);
 }
 
 void
@@ -581,9 +617,9 @@ void
 Spring::update_length(Mass_Point* m1, Mass_Point* m2)
 {
   this->length = sqrt( pow((m1->get_position().x * 1000 
-                     - m2->get_position().x * 1000) / (NORMAL_POS * 1000), 2) 
+                     - m2->get_position().x * 1000) / (LENGHT_UNIT * 1000), 2) 
                      + pow((m1->get_position().y * 1000 
-                     - m2->get_position().y * 1000) / (NORMAL_POS * 1000), 2));
+                     - m2->get_position().y * 1000) / (LENGHT_UNIT * 1000), 2));
 }
 
 void
@@ -650,38 +686,61 @@ Rope::Rope(unsigned int point_number,
            color);
 }
 
-Rope::Rope(Rope left, Rope right, sf::Color color)
+Rope::Rope(Rope* left, Rope* right, sf::Color color)
 {
-  for(int i = 0; i < left.size(); ++i)
-    this->mass_point.push_back(left.get_mass(i));
-  
-  mass_point.at(left.size()-1).set_constraint();
+  this->a = left->get_mass(0).get_constraint();
+  this->b = right->get_mass(right->size() -1).get_constraint();
 
-  for(int i = 0; i < right.size(); ++i)
-    this->mass_point.push_back(right.get_mass(i));
+  for(int i = 0; i < left->size(); ++i)
+  {
+    this->mass_point.push_back(left->get_mass(i));
+    this->mass_point.back().set_constraint();
+  }
 
-  mass_point.at(left.size()).set_constraint();
+  for(int i = 0; i < right->size(); ++i)
+  {
+    this->mass_point.push_back(right->get_mass(i));
+    this->mass_point.back().set_constraint();
+  }
 
-  for(int i = 0; i < left.size() -1; ++i)
-    this->spring.push_back(left.get_spring(i));
+  for(int i=0; i<left->size()-1; ++i)
+  {
+    Spring temp(left->get_spring(i).get_k(), 
+                &mass_point.at(i), 
+                &mass_point.at(i+1));
 
-  Spring temp(this->spring.at(0).get_k(),
-              &mass_point.at(left.size() -1),
-              &mass_point.at(left.size()));
+    this->spring.push_back(temp);
+  }
 
-  spring.push_back(temp);
+  {
+    Spring temp(0, 
+                &mass_point.at(left->size()-1), 
+                &mass_point.at(left->size()));
+    
+    temp.set_k((left->get_tension() 
+               + right->get_tension()) 
+               / 2.0f / temp.get_length());
 
-  for(int i = 0; i < right.size() -1; ++i)
-    this->spring.push_back(right.get_spring(i));
+    this->spring.push_back(temp);
+  }
+
+  for(int i=0; i<right->size()-1; ++i)
+  {
+    Spring temp(right->get_spring(i).get_k(), 
+                &mass_point.at(left->size() + i), 
+                &mass_point.at(left->size() + i+1));
+
+    this->spring.push_back(temp);
+  }
 
   this->point_number = mass_point.size();
-  this->mass = left.get_mass() + right.get_mass();
+  this->mass = left->get_mass() + right->get_mass();
   update_tension();
   update_length();
   this->position = mass_point.at(0).get_position();
-  this->a = mass_point.front().get_constraint();
-  this->b = mass_point.back().get_constraint();
   this->color = color; 
+  set_constraint(0, a);
+  set_constraint(point_number - 1, b);
 }
 
 void 
@@ -691,11 +750,11 @@ Rope::builder(unsigned int point_number, float mass, float tension,
 {
   this->point_number = point_number;
   this->mass = mass;
-  this->length = length * NORMAL_POS;
+  this->length = length * LENGHT_UNIT;
   this->tension = tension;
   this->length = length;
   this->position = position;
-  this->a = a; 
+  this->a = a;
   this->b = b;
   this->color = color;
 
@@ -745,12 +804,14 @@ Rope::update_tension()
   float force = 0.0f;
 
   for(int i = 0; i < spring.size(); ++i)
-    force = force * (i / i+1) + 
-            spring.at(i).get_k() * 
-            spring.at(i).get_length() / 
-            (i+1);   
-  
-  this->tension = force;
+  {
+    force  = force * (i / (i+1)) 
+           + spring.at(i).get_k() * 
+             spring.at(i).get_length() / 
+             (i+1);   
+  }
+
+  this->tension = force * spring.size();
 }
 
 void
@@ -763,20 +824,19 @@ Rope::update_length()
 }
 
 void
-Rope::set_constraint(std::string point_name, bool x, bool y)
+Rope::set_constraint(unsigned int i, bool x, bool y)
 {
   Constraint constraint(x, y);
-  set_constraint(point_name, constraint);
+  set_constraint(i, constraint);
 }
 
 void
-Rope::set_constraint(std::string point_name, Constraint constraint)
+Rope::set_constraint(unsigned int i, Constraint constraint)
 {
-  const char* name = point_name.c_str();
-  if(*name == 'a')
-    this->a = constraint;
-  else if(*name == 'b')
-    this->b = constraint;
+  if(i >= point_number)
+    i = point_number-1;
+
+  this->mass_point.at(i).set_constraint(constraint);
 }
 
 void
@@ -795,7 +855,7 @@ Rope::set_shape(Linear_Shape shape, float oscillation_amplitude)
     new_position.push_back(mass_point.at(i).get_position());
 
   shape.apply(&new_position, length,
-              oscillation_amplitude * NORMAL_POS);
+              oscillation_amplitude);
 
   for(int i = 0; i < new_position.size(); ++i)
     mass_point.at(i).set_position(new_position.at(i));
@@ -900,7 +960,9 @@ Linear_Shape::builder(std::string function_name,
                       float repetitions)
 {
   this->current_function = function_name;
-  this->data = {amplitude, width, repetitions};
+  this->data.amplitude = amplitude;
+  this->data.width = width;
+  this->data.repetitions = repetitions;
 
   function_loader();  
 }
@@ -953,12 +1015,13 @@ Linear_Shape::function_loader()
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
     for(int i = 0; i < position->size(); ++i)
-      position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+      position->at(i) = { position->at(0).x + i * length * (LENGHT_UNIT / position->size()), position->at(0).y };
   });
 
   add_function("sine",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
+<<<<<<< HEAD
     for(int i = 1; i < position->size(); ++i)
     {
       if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
@@ -970,24 +1033,32 @@ Linear_Shape::function_loader()
       {
         position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
       }
+=======
+    for(float i = 1.0f; i < position->size(); ++i)
+    {
+      position->at(i) = { position->at(0).x + i * length * (LENGHT_UNIT / position->size()), position->at(0).y };
+
+      if(position->at(0).x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
+        position->at(i).y = position->at(0).y - std::sin( i / position->size() / data.width * data.repetitions * 2.0f * M_PI) * height * (LENGHT_UNIT * data.amplitude / 2.0f);
+>>>>>>> 253d62a5fa40ee0280af2152bb193667a0bc3f3a
     }
   });
 
   add_function("cosine",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
-    for(int i = 0; i < position->size(); ++i)
+    sf::Vector2f pos0 = position->at(0);
+
+    for(float i = 0; i < position->size(); ++i)
     {
-      if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
-      {
-        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
-        position->at(i).y = position->at(0).y - std::cos((position->at(i).x / data.repetitions * M_PI)) * height * data.amplitude / 2;
-      }
-      else
-      {
-        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
-      }
+      position->at(i) = { pos0.x + i * length * (LENGHT_UNIT / position->size()), pos0.y };
+
+      if(position->at(0).x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
+        position->at(i).y = pos0.y - std::cos( i / position->size() / data.width * data.repetitions * 2.0f * M_PI) * height * (LENGHT_UNIT * data.amplitude / 2.0f);
     }
+
+
+
   });
 
   add_function("square",
@@ -995,6 +1066,7 @@ Linear_Shape::function_loader()
   {
     for(int i = 1; i < position->size(); ++i)
     {
+<<<<<<< HEAD
       if(position->at(0).x + i * length * (NORMAL_POS / position->size()) < length * data.width * NORMAL_POS )
       {
        position->at(i).x = position->at(0).x + i * length * (NORMAL_POS / position->size());
@@ -1007,8 +1079,18 @@ Linear_Shape::function_loader()
 
       }
       else
+=======
+      position->at(i) = { position->at(0).x + i * length * (LENGHT_UNIT / position->size()), position->at(0).y };
+
+      if(position->at(0).x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
+>>>>>>> 253d62a5fa40ee0280af2152bb193667a0bc3f3a
       {
-        position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+
+        if(std::sin(static_cast<float>(i) / position->size() / data.width * data.repetitions * 2.0f * M_PI) < 0)
+          position->at(i).y = position->at(0).y - (height * LENGHT_UNIT * data.amplitude / 2.0f);
+        else
+          position->at(i).y = position->at(0).y + (height * LENGHT_UNIT * data.amplitude / 2.0f);
+
       }
 
       position->at(position->size()-1).y = position->at(0).y;
@@ -1018,6 +1100,7 @@ Linear_Shape::function_loader()
   add_function("triangle",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
+<<<<<<< HEAD
     sf::Vector2f pos0 = position->at(0);
 
     for(int i = 0; i < position->size(); ++i)
@@ -1036,6 +1119,36 @@ Linear_Shape::function_loader()
       else
       {
         position->at(i) = { position->at(0).x + i * length * (NORMAL_POS / position->size()), position->at(0).y };
+=======
+    for(float i = 1.0f; i < position->size(); ++i)
+    {
+      position->at(i) = { position->at(0).x + i * length * (LENGHT_UNIT / position->size()), position->at(0).y };
+
+      if(position->at(0).x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
+      {
+        float height_increment = height * (LENGHT_UNIT / position->size()) * data.amplitude / data.width * 2.0f * data.repetitions;
+
+        if(std::cos( i / position->size() / data.width * data.repetitions * 2.0f * M_PI) > 0)
+          position->at(i).y = position->at(i-1).y + height_increment;
+        else  
+          position->at(i).y = position->at(i-1).y - height_increment;
+      }
+    }
+  });
+
+  add_function("wave",
+  [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
+  {
+    sf::Vector2f pos0 = position->at(0);
+
+    for(float i = 0.0f; i < position->size(); ++i)
+    {
+      position->at(i) = { pos0.x + i * length * (LENGHT_UNIT / position->size()), pos0.y };
+
+      if(pos0.x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
+      {
+        position->at(i).y = pos0.y - (1 - std::cos( i / position->size() / data.width * data.repetitions * M_PI + M_PI)) * height * (LENGHT_UNIT * data.amplitude / 2);
+>>>>>>> 253d62a5fa40ee0280af2152bb193667a0bc3f3a
       }
     }
   });

@@ -487,3 +487,44 @@ Rope::update_length()
   for(auto i: spring)
     this->length += i.get_length();
 }
+
+//? ________________________________________________________________________________________________________
+//? FFT
+
+FFT::FFT()
+{
+
+}
+
+void 
+FFT::input(sf::Vector2f pos, float t) // DUMP QUA DENTRO
+{
+  if(data.empty() == true)
+  {
+    FFT_Data temp;
+    temp.time = t;
+    temp.position.push_back(pos);
+    data.push_back(temp);
+  }
+  else if(t == data.end()->time)
+  {
+    std::cout << "ok if\n";
+    data.end()->position.push_back(pos);
+  }
+  else
+  {
+    std::cout << "ok else\n";
+    FFT_Data temp;
+    temp.time = t;
+    temp.position.push_back(pos);
+    data.push_back(temp);
+  }
+  std::cout << "Tempo: " << t << "\t Posizione: " << pos.x << "\t" << pos.y << std::endl;
+}
+
+std::vector<sf::Vector2f> 
+FFT::evaluate(std::vector<sf::Vector2f> point)
+{
+
+}
+

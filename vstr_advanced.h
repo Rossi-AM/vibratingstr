@@ -12,6 +12,11 @@ struct Linear_Data;
 
 typedef std::function<void (std::vector<sf::Vector2f>*, float, float, Linear_Data)> linear_method;
 
+// for FFT
+
+#define POS_SAMPLING 10.0f // number of points sampled
+#define TIME_SAMPLING 0.1f // seconds between samplings
+
 //!______________________________________________________________________________________________________________________________________________________________
 //! class declarations
 
@@ -125,7 +130,6 @@ class Rope
   void apply(); // apply all springs
   void update(float time_increment); // update all mass_point positions and velocity
 
-
   private:
 
   unsigned int point_number;
@@ -153,3 +157,35 @@ class Rope
   void update_tension();
   void update_length();
 };
+
+//?______________________________________________________________________________________________________________________________________________________________
+//? FFT_Data
+
+struct FFT_Data
+{
+  float time;
+  std::vector<sf::Vector2f> position;
+};
+
+//?______________________________________________________________________________________________________________________________________________________________
+//? FFT_Data
+
+class FFT
+{
+  public:
+  
+  FFT();
+  ~FFT() {};
+  
+  void input(sf::Vector2f pos, float t);
+
+  FFT_Data evaluate_at_time(float t);
+  std::vector<FFT_Data> evaluate_all();
+
+  private:
+  
+  std::vector<FFT_Data> data;
+
+  std::vector<sf::Vector2f> evaluate(std::vector<sf::Vector2f> point);
+};
+

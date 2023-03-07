@@ -13,7 +13,7 @@
 
 int main(int argc, char const *argv[])
 {
-  sf::RenderWindow window(sf::VideoMode(1000, 800), "simulation of a wave traveling with horizontal motion allowed (red) and not allowed (blue)");
+  sf::RenderWindow window(sf::VideoMode(1000, 800), "Wave travelling with horizontal motion allowed (red) and not allowed (blue)");
 
   unsigned int mass_point_num = 2000;
   float mass_1 = 1.0f;

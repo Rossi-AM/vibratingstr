@@ -22,7 +22,6 @@ int main(int argc, char const *argv[])
   float mass1 = 5.0f;
   float mass2 = 1.0f;
   float time_increment = 0.00001f;
-  float simulation_time = 0.0f;
   float tension = 100.0f;
   float length = 0.625f;
   sf::Vector2f initial_pos1(0.0f,400.0f);
@@ -31,7 +30,6 @@ int main(int argc, char const *argv[])
   Constraint constraint_b(true, false);
   sf::Color color1(150,0,0);
   sf::Color color2(0,0,150);
-  FFT fft;
 
   //amplitude, width, repetitions
   Linear_Shape shape("wave", 1.0f, 0.1f, 1.0f);
@@ -70,26 +68,11 @@ int main(int argc, char const *argv[])
     {
       rope.apply();
       rope.update(time_increment);
-      simulation_time += time_increment;
     }
 
     window.clear();
-
     for(unsigned int i=0; i<rope.size(); ++i)
-    {
       window.draw(rope.get_mass(i).point);
-      // std::cout << "Simulation time = " << simulation_time << std::endl;
-
-      if(std::remainder(simulation_time, TIME_SAMPLING) <= 0.001f)
-      {
-        // std::cout << "harvesting data tempo\n";
-        if(std::remainder(i, (mass_point_num/POS_SAMPLING)) == 0.0f)
-        {
-          fft.input(rope.get_position_at(i), simulation_time); // DUMP QUA DENTRO
-          // std::cout << "harvesting data pos\n";
-        }
-      }
-    }
     window.display();
   }
 

@@ -497,23 +497,28 @@ FFT::FFT()
 }
 
 void 
-FFT::input(sf::Vector2f pos, float t) // DUMP QUA DENTRO
+FFT::input(sf::Vector2f pos, float t) 
 {
   if(data.empty() == true)
   {
+    std::cout << "ok if\n";
     FFT_Data temp;
     temp.time = t;
     temp.position.push_back(pos);
     data.push_back(temp);
+    std::cout << "Tempo: " << t << "\t Posizione: " << pos.x << "\t" << pos.y << std::endl;
+
   }
   else if(t == data.end()->time)
   {
-    std::cout << "ok if\n";
+    std::cout << "ok else if\n";
     data.end()->position.push_back(pos);
+    std::cout << "Tempo: " << t << "\t Posizione: " << pos.x << "\t" << pos.y << std::endl;
+
   }
   else
   {
-    std::cout << "ok else\n";
+    // std::cout << "ok else\n";
     FFT_Data temp;
     temp.time = t;
     temp.position.push_back(pos);

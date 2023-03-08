@@ -8,42 +8,30 @@
 #include <SFML/Graphics.hpp>
 #include "vstr_advanced.h"
 
-//!________________________________________________________________________________________________________
-//! MAIN
 
 int main(int argc, char const *argv[])
 {
-  //system("rm results.dat");
   sf::Clock global_clock;
 
-  sf::RenderWindow window(sf::VideoMode(1000, 800), "Simulation of transmission & reflection from a more dense to a less dense rope");
+  sf::RenderWindow window(sf::VideoMode(1000, 800), "WIP");
 
-  unsigned int mass_point_num = 2000;
-  float mass1 = 5.0f;
-  float mass2 = 1.0f;
-  float time_increment = 0.00001f;
-  float simulation_time = 0.0f;
+  unsigned int mass_point_num = 1000;
+  float mass = 5.0f;
+  float time_increment = 0.00001;
   float tension = 100.0f;
-  float length = 0.625f;
-  sf::Vector2f initial_pos1(0.0f,400.0f);
-  sf::Vector2f initial_pos2(500.0f,400.0f);
+  float length = 1.25f;
+  float simulation_time = 0.0;
+  sf::Vector2f initial_pos(0.0f,400.0f);
   Constraint constraint_a(true, false);
   Constraint constraint_b(true, false);
-  sf::Color color1(150,0,0);
-  sf::Color color2(0,0,150);
-  FFT fft;
+  sf::Color color(150,0,0);
 
   //amplitude, width, repetitions
   Linear_Shape shape("wave", 1.0f, 0.1f, 1.0f);
-  Linear_Shape line("line");
 
-  Rope rope1(mass_point_num, mass1, tension, length, initial_pos1, constraint_a, constraint_b, color1);
-  Rope rope2(mass_point_num, mass2, tension, length, initial_pos2, constraint_a, constraint_b, color2);
+  Rope rope(mass_point_num, mass, tension, length, initial_pos, constraint_a, constraint_b, color);
 
-  rope1.set_shape(shape, 0.5f);
-  rope2.set_shape(line,0.0f);
-
-  Rope rope(&rope1, &rope2);
+  rope.set_shape(shape, 0.5f);
 
   sf::Time global_time;
   sf::Time time;
@@ -51,10 +39,13 @@ int main(int argc, char const *argv[])
   
   clock.restart();
   global_clock.restart();
-  //_________________________________________________________________________________________________________
+  //________________________________________________________________________
   //main cicle
   while(window.isOpen())
   {
+    // std::cout << "tempo: " << global_clock.getElapsedTime().asSeconds() << std::endl;
+    // std::cout << "simulation_time: " << simulation_time << std::endl;
+
     time = clock.getElapsedTime(); 
     clock.restart();
 
@@ -73,24 +64,33 @@ int main(int argc, char const *argv[])
       simulation_time += time_increment;
     }
 
+  //! Entering FFT only mode
+  #ifdef FFT_ONLY
+  
+    FFT fft;
+    int sampling_counter = 1;
+
+    if(simulation_time > TIME_SAMPLING * sampling_counter)
+    {
+      for(unsigned int i=0; i<rope.size(); ++i)
+      {
+        if(std::remainder(i, (mass_point_num/POS_SAMPLING)) == 0.0f)
+          fft.input(rope.get_position_at(i), simulation_time);
+      }
+      sampling_counter++; 
+    }
+    
+  //! Entering graphic only mode
+  #else 
+
     window.clear();
 
     for(unsigned int i=0; i<rope.size(); ++i)
-    {
       window.draw(rope.get_mass(i).point);
-      // std::cout << "Simulation time = " << simulation_time << std::endl;
 
-      if(std::remainder(simulation_time, TIME_SAMPLING) <= 0.001f)
-      {
-        // std::cout << "harvesting data tempo\n";
-        if(std::remainder(i, (mass_point_num/POS_SAMPLING)) == 0.0f)
-        {
-          fft.input(rope.get_position_at(i), simulation_time); // DUMP QUA DENTRO
-          // std::cout << "harvesting data pos\n";
-        }
-      }
-    }
     window.display();
+
+  #endif
   }
 
   return 0;

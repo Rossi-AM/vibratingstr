@@ -15,7 +15,7 @@ typedef std::function<void (std::vector<sf::Vector2f>*, float, float, Linear_Dat
 // for FFT
 
 #define POS_SAMPLING 10.0f // number of points sampled
-#define TIME_SAMPLING 0.1f // seconds between samplings
+#define TIME_SAMPLING 1.0f // seconds between samplings
 
 //!______________________________________________________________________________________________________________________________________________________________
 //! class declarations

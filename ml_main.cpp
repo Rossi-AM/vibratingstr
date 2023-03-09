@@ -22,12 +22,15 @@ int main(int argc, char const *argv[])
   float length = 1.25f;
   float simulation_time = 0.0;
   sf::Vector2f initial_pos(0.0f,400.0f);
-  Constraint constraint_a(true, false);
-  Constraint constraint_b(true, false);
+  Constraint constraint_a(true, true);
+  Constraint constraint_b(true, true);
   sf::Color color(150,0,0);
+  FFT fft;
+  int sampling_counter = 1;
+
 
   //amplitude, width, repetitions
-  Linear_Shape shape("wave", 1.0f, 0.1f, 1.0f);
+  Linear_Shape shape("sine", 1.0f, 1.0f, 1.0f);
 
   Rope rope(mass_point_num, mass, tension, length, initial_pos, constraint_a, constraint_b, color);
 
@@ -67,9 +70,6 @@ int main(int argc, char const *argv[])
   //! Entering FFT only mode
   #ifdef FFT_ONLY
   
-    FFT fft;
-    int sampling_counter = 1;
-
     if(simulation_time > TIME_SAMPLING * sampling_counter)
     {
       for(unsigned int i=0; i<rope.size(); ++i)

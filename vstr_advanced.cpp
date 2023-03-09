@@ -499,7 +499,7 @@ FFT::FFT()
 void 
 FFT::input(sf::Vector2f pos, float t) 
 {
-  if(data.empty() == true)
+  /*if(data.empty() == true)
   {
     std::cout << "ok if\n";
     FFT_Data temp;
@@ -509,16 +509,16 @@ FFT::input(sf::Vector2f pos, float t)
     std::cout << "Tempo: " << t << "\t Posizione: " << pos.x << "\t" << pos.y << std::endl;
 
   }
-  else if(t == data.end()->time)
+  else */if(data.empty() == true || t == data.end()->time)
   {
-    std::cout << "ok else if\n";
+    std::cout << "ok if\n";
     data.end()->position.push_back(pos);
     std::cout << "Tempo: " << t << "\t Posizione: " << pos.x << "\t" << pos.y << std::endl;
 
   }
   else
   {
-    // std::cout << "ok else\n";
+    std::cout << "ok else\n";
     FFT_Data temp;
     temp.time = t;
     temp.position.push_back(pos);

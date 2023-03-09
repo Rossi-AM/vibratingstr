@@ -181,6 +181,7 @@ class FFT
 
   FFT_Data evaluate_at_time(float t);
   std::vector<FFT_Data> evaluate_all();
+  std::vector<FFT_Data> get_data(){ return data;};
 
   private:
   

@@ -4,10 +4,13 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <complex>
+#include "mkl.h"
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include "vstr_advanced.h"
 
+#define FFT_ONLY
 
 int main(int argc, char const *argv[])
 {
@@ -16,25 +19,34 @@ int main(int argc, char const *argv[])
   sf::RenderWindow window(sf::VideoMode(1000, 800), "WIP");
 
   unsigned int mass_point_num = 1000;
-  float mass = 5.0f;
+  float mass_1 = 5.0f;
+  float mass_2 = 10.0f;
   float time_increment = 0.00001;
   float tension = 100.0f;
-  float length = 1.25f;
+  float length = 0.625f;
   float simulation_time = 0.0;
-  sf::Vector2f initial_pos(0.0f,400.0f);
-  Constraint constraint_a(true, true);
-  Constraint constraint_b(true, true);
-  sf::Color color(150,0,0);
+  sf::Vector2f initial_pos1(0.0f,400.0f);
+  sf::Vector2f initial_pos2(500.0f,400.0f);
+  Constraint constraint_a(true, false);
+  Constraint constraint_b(true, false);
+  sf::Color color_1(150,0,0);
+  sf::Color color_2(0,0,150);
   FFT fft;
   int sampling_counter = 1;
 
 
   //amplitude, width, repetitions
-  Linear_Shape shape("sine", 1.0f, 1.0f, 1.0f);
+  Linear_Shape shape_1("wave", 1.0f, 0.1f, 1.0f);
+  Linear_Shape shape_2("line", 1.0f, 1.0f, 1.0f);
 
-  Rope rope(mass_point_num, mass, tension, length, initial_pos, constraint_a, constraint_b, color);
+  
+  Rope rope_1(mass_point_num, mass_1, tension, length, initial_pos1, constraint_a, constraint_b, color_1);
+  Rope rope_2(mass_point_num, mass_2, tension, length, initial_pos2, constraint_a, constraint_b, color_2);
 
-  rope.set_shape(shape, 0.5f);
+  rope_1.set_shape(shape_1, 0.5f);
+  rope_2.set_shape(shape_2, 0.5f);
+
+  Rope rope(&rope_1, &rope_2);
 
   sf::Time global_time;
   sf::Time time;
@@ -46,9 +58,6 @@ int main(int argc, char const *argv[])
   //main cicle
   while(window.isOpen())
   {
-    // std::cout << "tempo: " << global_clock.getElapsedTime().asSeconds() << std::endl;
-    // std::cout << "simulation_time: " << simulation_time << std::endl;
-
     time = clock.getElapsedTime(); 
     clock.restart();
 
@@ -78,8 +87,26 @@ int main(int argc, char const *argv[])
           fft.input(rope.get_position_at(i), simulation_time);
       }
       sampling_counter++; 
+
+      // Debug
+      for(unsigned int i=0; i<POS_SAMPLING; ++i)
+        std::cout << fft.get_data().at(sampling_counter-2).time << "\t" << fft.get_data().at(sampling_counter-2).position.at(i).x << "\t" << fft.get_data().at(sampling_counter-2).position.at(i).y << std::endl;
+    }
+
+    float *f;   // input: f[n] = f(a + n*T/N), n=0...N-1
+    std::complex *F; // output: F[k] = F(2*k*PI/T), k=0...N/2
+    DFTI_DESCRIPTOR_HANDLE h = NULL;
+    DftiCreateDescriptor(&h,DFTI_SINGLE,DFTI_REAL,1,(MKL_LONG)N);
+    DftiSetValue(h,DFTI_CONJUGATE_EVEN_STORAGE,DFTI_COMPLEX_COMPLEX);
+    DftiSetValue(h,DFTI_PLACEMENT,DFTI_NOT_INPLACE);
+    DftiCommitDescriptor(h);
+    DftiComputeForward(h,f, F);
+    for (int k = 0; k <= POS_SAMPLING/2; ++k)
+    {
+    F[k] *= (mass_point_num/POS_SAMPLING)*std::complex( cos(2*M_PI*a*k/T), -sin(2*M_PI*a*k/T) );
     }
     
+
   //! Entering graphic only mode
   #else 
 

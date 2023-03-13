@@ -13,7 +13,7 @@
 
 int main(int argc, char const *argv[])
 {
-  sf::RenderWindow window(sf::VideoMode(1000, 800), "Wave travelling on heavy rope (mass = 5)");
+  sf::RenderWindow window(sf::VideoMode(1000, 800), "Simulation of a wave traveling on a more massive rope (mass = 5)");
 
   unsigned int mass_point_num = 4000;
   float mass = 5.0f;

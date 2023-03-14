@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <complex>
+#include <iterator>
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include "vstr_advanced.h"

@@ -15,7 +15,7 @@ int main(int argv, char** argc)
 
   sf::RenderWindow window(sf::VideoMode(1000, 800), "fourier analysis");
 
-  unsigned int mass_point_num = 1000;
+  unsigned int mass_point_num = pow(2,14);
   float mass = 5.0f;
   float time_increment = 0.00001f;
   float tension = 200.0f;
@@ -26,13 +26,12 @@ int main(int argv, char** argc)
   sf::Color color(150,0,0);
 
   float simulation_time = 0.0f;
-  float sampling_time = 0.0f;
-  float sampling_time_increment = 0.0f;
-  int fourier_bins_number = 16;
+  float campion_time = 0.0f;
+  float campion_time_increment = 0.5f;
 
   Rope rope(mass_point_num, mass, tension, length, initial_pos, constraint_a, constraint_b, color);
 
-  Linear_Shape shape("sine", 1.0f, 1.0f, 2.0f);
+  Linear_Shape shape("sine", 1.0f, 1.0f, 0.5f);
   rope.set_shape(shape, 0.5f);
 
   FFT fft;
@@ -46,7 +45,7 @@ int main(int argv, char** argc)
   temp.setPosition(0.0f,0.0f);
   temp.setFillColor(color);
   
-  for(int i=0; i<fourier_bins_number; ++i)
+  for(int i=0; i<mass_point_num; ++i)
     fourier_transform.push_back(temp);
   }
 
@@ -59,27 +58,29 @@ int main(int argv, char** argc)
     clock.restart();
 
     system("clear");
-    std::cout << simulation_time << "\t Simulation time" << std::endl 
-              << sampling_time << "\t \t next samplingation time" << std::endl 
+    std::cout << simulation_time << "\t simulation time" << std::endl 
+              << campion_time << "\t \t next campionation time" << std::endl 
               << global_clock.getElapsedTime().asSeconds() << "\t \t real time elapsed" << std::endl;
     
     std::cout << std::endl;
 
-    if(simulation_time >= sampling_time)
+    if(simulation_time >= campion_time)
     {
-      sampling_time += sampling_time_increment;
+      campion_time += campion_time_increment;
 
       std::vector<sf::Vector2f> f_position;
 
-      for(int i=0; i<fourier_bins_number; ++i)
-        f_position.push_back(rope.get_position_at(static_cast<int>(i * rope.size() / fourier_bins_number)));
-      
-      fft.input(f_position, simulation_time);
+      for(int i=0; i<mass_point_num; ++i)
+        f_position.push_back(rope.get_position_at(i));
+
+      fft.input_by_time(f_position, simulation_time);
 
       f_position = fft.evaluate_at_time(simulation_time);
 
       for(int i=0; i<f_position.size(); ++i)
         fourier_transform.at(i).setPosition(f_position.at(i));
+
+
     }
 
     sf::Event event;

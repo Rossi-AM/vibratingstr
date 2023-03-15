@@ -6,7 +6,7 @@
 //?______________________________________________________________________________________________________________________________________________________________
 //? FFT data time
 
-struct FFT_Data
+struct FT_DATA
 {
   unsigned int index;
   float time;
@@ -14,27 +14,35 @@ struct FFT_Data
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? FFT 
+//? DFT 
 
-class FFT
+class DFT
 {
   public:
 
-    void input(sf::Vector2f position, float time, unsigned int index);
-
-    void input_by_time(sf::Vector2f position, float time);
-    void input_by_time(std::vector<sf::Vector2f> position, float time);
+    void input(sf::Vector2f position, float time);
+    void input(std::vector<sf::Vector2f> position, float time);
     
     std::vector<sf::Vector2f> evaluate_at_time(float time);
-    std::vector<sf::Vector2f> evaluate_for_index(unsigned int index);
-    std::vector<FFT_Data> evaluate_all_time();
+    std::vector<FT_DATA> evaluate_all_time();
   
   private:
 
-    std::vector<FFT_Data> time_data;
-    std::vector<FFT_Data> index_data;
+    std::vector<FT_DATA> time_data;
 
     std::vector<sf::Vector2f> evaluate(std::vector<sf::Vector2f> point);
     std::vector<std::complex<double>> transform(std::vector<std::complex<double>> point);
 };
 
+//?______________________________________________________________________________________________________________________________________________________________
+//? FFT 
+
+class FFT : public DFT
+{  
+  private:
+
+    std::vector<FT_DATA> time_data;
+
+    std::vector<sf::Vector2f> evaluate(std::vector<sf::Vector2f> point);
+    std::vector<std::complex<double>> transform(std::vector<std::complex<double>> point);
+};

@@ -32,7 +32,7 @@ int main(int argv, char** argc)
 
   Rope rope(mass_point_num, mass, tension, length, initial_pos, constraint_a, constraint_b, color);
 
-  Linear_Shape shape("sine", 1.0f, 1.0f, 2.0f);
+  Linear_Shape shape("sine", 1.0f, 1.0f, 1.5f);
   rope.set_shape(shape, 0.5f);
 
   FFT fft;
@@ -48,6 +48,19 @@ int main(int argv, char** argc)
   
   for(int i=0; i<fourier_bins_number; ++i)
     fourier_transform.push_back(temp);
+
+  int i;
+  for(i = 0;; ++i)
+    if(fourier_transform.size() < pow(2, i))
+    {
+      --i;
+      break;
+    }
+
+
+  while(pow(2,i) < fourier_transform.size())
+    fourier_transform.pop_back();
+  
   }
 
   global_clock.restart();

@@ -112,6 +112,7 @@ Linear_Shape::function_loader()
       if(position->at(0).x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
         position->at(i).y = position->at(0).y - std::sin( i / position->size() / data.width * data.repetitions * 2.0f * M_PI) * height * (LENGHT_UNIT * data.amplitude / 2.0f);
     }
+    position->back().y = position->front().y;
   });
 
   add_function("cosine",
@@ -126,9 +127,6 @@ Linear_Shape::function_loader()
       if(position->at(0).x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
         position->at(i).y = pos0.y - std::cos( i / position->size() / data.width * data.repetitions * 2.0f * M_PI) * height * (LENGHT_UNIT * data.amplitude / 2.0f);
     }
-
-
-
   });
 
   add_function("square",

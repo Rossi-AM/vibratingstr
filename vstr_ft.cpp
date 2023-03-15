@@ -7,13 +7,13 @@
 #include <complex>
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
-#include "vstr_fft.h"
+#include "vstr_ft.h"
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? FFT
+//? DFT
 
 void 
-FFT::input(sf::Vector2f position, float time)
+DFT::input(sf::Vector2f position, float time)
 {
   bool check = true;
   for(int i = 0; i<time_data.size(); ++i)
@@ -28,7 +28,7 @@ FFT::input(sf::Vector2f position, float time)
 
   if(check)
   {
-    FFT_Data temp;
+    FT_DATA temp;
     temp.position.push_back(position);
     temp.time = time;
     time_data.push_back(temp);
@@ -37,7 +37,7 @@ FFT::input(sf::Vector2f position, float time)
 
 
 void 
-FFT::input(std::vector<sf::Vector2f> position, float time)
+DFT::input(std::vector<sf::Vector2f> position, float time)
 {
   for(int i=0; i<position.size(); ++i)
     input(position.at(i), time);
@@ -45,7 +45,7 @@ FFT::input(std::vector<sf::Vector2f> position, float time)
 
 
 std::vector<sf::Vector2f>
-FFT::evaluate_at_time(float time)
+DFT::evaluate_at_time(float time)
 {
   std::vector<sf::Vector2f> result;
 
@@ -62,14 +62,14 @@ FFT::evaluate_at_time(float time)
 }
 
 
-std::vector<FFT_Data> 
-FFT::evaluate_all_time()
+std::vector<FT_DATA> 
+DFT::evaluate_all_time()
 {
-  std::vector<FFT_Data> result;
+  std::vector<FT_DATA> result;
   
   for(int i=0; i<time_data.size(); ++i)
   {
-    FFT_Data temp;
+    FT_DATA temp;
     temp.position = evaluate_at_time(time_data.at(i).time);
     temp.time = time_data.at(i).time;
     result.push_back(temp);
@@ -78,6 +78,65 @@ FFT::evaluate_all_time()
   return result;
 }
 
+
+std::vector<sf::Vector2f> 
+DFT::evaluate(std::vector<sf::Vector2f> point)
+{
+  if(point.size()%2 == 1)
+    point.pop_back();
+
+  float y0 = point.front().y;
+  std::vector<std::complex<double>> complex_point;
+
+  for(int i = 0; i<point.size(); ++i)
+  {
+    std::complex<double> temp(point.at(i).y - y0, 0.0);
+    complex_point.push_back(temp);
+  }
+
+  complex_point = transform(complex_point);
+
+  for(int i=0; i<complex_point.size()/2; ++i)
+  {
+    point.at(i).x *= 2.0;
+    point.at(i).y = y0 - abs(complex_point.at(i).imag());
+
+    point.at(i+complex_point.size()/2).x = point.at(i).x;
+    point.at(i+complex_point.size()/2).y = y0 - abs(complex_point.at(i).real());
+  }
+
+  return point;
+}
+
+
+std::vector<std::complex<double>> 
+DFT::transform(std::vector<std::complex<double>> point)
+{
+  double frequency_steps = 0.5;
+
+  std::complex i(0.0, 1.0);
+
+  std::vector<std::complex<double>> result;
+
+  for(double k=0.0, frequency = 0.0; k<point.size(); ++k)
+  {
+    std::complex<double> temp(0.0, 0.0);
+
+    for(double l=0; l<point.size(); ++l)
+    {
+      std::complex<double> theta(2.0 * M_PI * l * frequency / point.size(), 0.0);
+      temp += point.at(l) * exp(i * theta);
+    }
+
+    result.push_back(temp);
+    frequency += frequency_steps;
+  }
+
+  return result;
+}
+
+//?______________________________________________________________________________________________________________________________________________________________
+//? FFT
 
 std::vector<sf::Vector2f> 
 FFT::evaluate(std::vector<sf::Vector2f> point)
@@ -118,7 +177,11 @@ FFT::evaluate(std::vector<sf::Vector2f> point)
     result.push_back(temp);
   }
 
-
+  for(int i=0; i<complex_point.size()/2; ++i)
+  {
+    point.pop_back();
+    point.at(i).x *= 2.0;
+  }
 
   return result;
 }

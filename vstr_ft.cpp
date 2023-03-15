@@ -45,7 +45,7 @@ DFT::input(std::vector<sf::Vector2f> position, float time)
 
 
 std::vector<sf::Vector2f>
-DFT::evaluate_at_time(float time)
+DFT::evaluate_at_time(float time, float y0, bool to_normalize, float normal_height)
 {
   std::vector<sf::Vector2f> result;
 
@@ -58,12 +58,17 @@ DFT::evaluate_at_time(float time)
 
   result = evaluate(time_data.at(i).position);
 
+  if(to_normalize)
+  {
+    normalize(result, DEFA)
+  }
+
   return result;  
 }
 
 
 std::vector<FT_DATA> 
-DFT::evaluate_all_time()
+DFT::evaluate_all_time(float y0, bool to_normalize, float normal_height)
 {
   std::vector<FT_DATA> result;
   
@@ -80,12 +85,11 @@ DFT::evaluate_all_time()
 
 
 std::vector<sf::Vector2f> 
-DFT::evaluate(std::vector<sf::Vector2f> point)
+DFT::evaluate(std::vector<sf::Vector2f> point , float y0)
 {
   if(point.size()%2 == 1)
     point.pop_back();
 
-  float y0 = point.front().y;
   std::vector<std::complex<double>> complex_point;
 
   for(int i = 0; i<point.size(); ++i)
@@ -133,6 +137,13 @@ DFT::transform(std::vector<std::complex<double>> point)
   }
 
   return result;
+}
+
+
+std::vector<sf::Vector2f> 
+DFT::normalize(std::vector<sf::Vector2f> point,float y0, float normal_height)
+{
+  
 }
 
 //?______________________________________________________________________________________________________________________________________________________________

@@ -73,7 +73,7 @@ int main(int argv, char** argc)
 
     system("clear");
     std::cout << simulation_time << "\t Simulation time" << std::endl 
-              << sampling_time << "\t \t next samplingation time" << std::endl 
+              << sampling_time << "\t \t next sampling time" << std::endl 
               << global_clock.getElapsedTime().asSeconds() << "\t \t real time elapsed" << std::endl;
     
     std::cout << std::endl;
@@ -117,5 +117,5 @@ int main(int argv, char** argc)
     window.display();
   }
 
-  return 0;
+  return 0; 
 }

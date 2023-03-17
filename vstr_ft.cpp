@@ -56,11 +56,11 @@ DFT::evaluate_at_time(float time, float y0, bool to_normalize, float normal_heig
   if(i == time_data.size())
     --i;
 
-  result = evaluate(time_data.at(i).position);
+  result = evaluate(time_data.at(i).position, DEFAULT_NORMAL_HEIGHT);
 
   if(to_normalize)
   {
-    normalize(result, DEFA)
+    result = normalize(result );
   }
 
   return result;  
@@ -141,9 +141,32 @@ DFT::transform(std::vector<std::complex<double>> point)
 
 
 std::vector<sf::Vector2f> 
-DFT::normalize(std::vector<sf::Vector2f> point,float y0, float normal_height)
+DFT::normalize(std::vector<sf::Vector2f> point, float y0, float normal_height)
 {
-  
+
+  float c_pos = 0.0f;
+  float s_pos = 0.0f;
+
+for(int i=0; i<point.size(); ++i)
+{
+  float temp = y0 - point.at(i).y;
+  if(i<point.size()/2 && s_pos < temp)
+    s_pos = temp;
+  else if(i >= point.size()/2 && c_pos > temp)
+    c_pos = temp;
+}
+
+for(int i=0; i<point.size(); ++i)
+{
+  if(i<point.size()/2)
+    point.at(i).y = (y0 - point.at(i).y) / s_pos;
+  else
+    point.at(i).y = (y0 - point.at(i).y) / c_pos;
+
+  point.at(i).y = y0 - (point.at(i).y * normal_height);
+}
+
+  return point;
 }
 
 //?______________________________________________________________________________________________________________________________________________________________

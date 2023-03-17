@@ -37,7 +37,7 @@ class DFT
 
     std::vector<FT_DATA> time_data;
 
-    std::vector<sf::Vector2f> evaluate(std::vector<sf::Vector2f> point);
+    std::vector<sf::Vector2f> evaluate(std::vector<sf::Vector2f> point, float y0);
     std::vector<std::complex<double>> transform(std::vector<std::complex<double>> point);
     std::vector<sf::Vector2f> normalize(std::vector<sf::Vector2f> point, float y0 = DEFAULT_NORMAL_HEIGHT, float normal_height = DEFAULT_NORMAL_HEIGHT);
 };

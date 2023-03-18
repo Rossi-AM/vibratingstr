@@ -41,6 +41,7 @@ Linear_Shape::builder(std::string function_name,
   this->data.width = width;
   this->data.repetitions = repetitions;
 
+  // load all initialization functions included in the library
   function_loader();  
 }
 
@@ -75,6 +76,7 @@ Linear_Shape::set_width(float width)
 void
 Linear_Shape::add_function(std::string name, linear_method foo)
 {
+  // create a new element of map functions with key name and function foo
   functions[name] = [this, foo](std::vector<sf::Vector2f>* position, float length, float height)
   { foo(position, length, height, data); };
 }
@@ -86,7 +88,8 @@ Linear_Shape::change_function(std::string name) {this->current_function = name;}
 void
 Linear_Shape::apply(std::vector<sf::Vector2f>* position, float length, float height)
 {
-    functions[current_function](position, length, height);
+  // call current_function passing input variables
+  functions[current_function](position, length, height);
 }
 
 //* private
@@ -94,7 +97,7 @@ Linear_Shape::apply(std::vector<sf::Vector2f>* position, float length, float hei
 void
 Linear_Shape::function_loader()
 {
-  // line distribution
+  // distribute positions as an horiontal line 
   add_function("line",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
@@ -102,6 +105,7 @@ Linear_Shape::function_loader()
       position->at(i) = { position->at(0).x + i * length * (LENGHT_UNIT / position->size()), position->at(0).y };
   });
 
+  // distribute positions as a sine, if width < 1 the rest is initialized as a line
   add_function("sine",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
@@ -112,9 +116,9 @@ Linear_Shape::function_loader()
       if(position->at(0).x + i * length * (LENGHT_UNIT / position->size()) < length * data.width * LENGHT_UNIT )
         position->at(i).y = position->at(0).y - std::sin( i / position->size() / data.width * data.repetitions * 2.0f * M_PI) * height * (LENGHT_UNIT * data.amplitude / 2.0f);
     }
-    position->back().y = position->front().y;
   });
 
+  //  distribute positions as a cosine, if width < 1 the rest is initialized as a line
   add_function("cosine",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
@@ -129,6 +133,7 @@ Linear_Shape::function_loader()
     }
   });
 
+  //  distribute positions as a square-wave sine, if width < 1 the rest is initialized as a line
   add_function("square",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
@@ -150,6 +155,7 @@ Linear_Shape::function_loader()
     }
   });
 
+  //  distribute positions as a triangular-wave sine, if width < 1 the rest is initialized as a line
   add_function("triangle",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
@@ -169,6 +175,7 @@ Linear_Shape::function_loader()
     }
   });
 
+  //  distribute positions to start a traveling wave 
   add_function("wave",
   [](std::vector<sf::Vector2f>* position, float length, float height, Linear_Data data)
   {
@@ -219,23 +226,27 @@ Rope::Rope(unsigned int point_number,
            color);
 }
 
-Rope::Rope(Rope* left, Rope* right, sf::Color color)
+Rope::Rope(Rope* left, Rope* right)
 {
+  // keep the constraint of the extreme 
   this->a = left->get_mass(0).get_constraint();
   this->b = right->get_mass(right->size() -1).get_constraint();
 
+  // add all the masses of the left rope and set their constraint to zero
   for(int i = 0; i < left->size(); ++i)
   {
     this->mass_point.push_back(left->get_mass(i));
     this->mass_point.back().set_constraint();
   }
 
+  // add all the masses of the right rope and set their constraint to zero
   for(int i = 0; i < right->size(); ++i)
   {
     this->mass_point.push_back(right->get_mass(i));
     this->mass_point.back().set_constraint();
   }
 
+  // add all springs of the left rope
   for(int i=0; i<left->size()-1; ++i)
   {
     Spring temp(left->get_spring(i).get_k(), 
@@ -245,6 +256,7 @@ Rope::Rope(Rope* left, Rope* right, sf::Color color)
     this->spring.push_back(temp);
   }
 
+  // add a spring to connect left and right ropes
   {
     Spring temp(0, 
                 &mass_point.at(left->size()-1), 
@@ -257,6 +269,7 @@ Rope::Rope(Rope* left, Rope* right, sf::Color color)
     this->spring.push_back(temp);
   }
 
+  // add all springs of the right rope
   for(int i=0; i<right->size()-1; ++i)
   {
     Spring temp(right->get_spring(i).get_k(), 
@@ -266,12 +279,15 @@ Rope::Rope(Rope* left, Rope* right, sf::Color color)
     this->spring.push_back(temp);
   }
 
+  // initialize all other variables
   this->point_number = mass_point.size();
   this->mass = left->get_mass() + right->get_mass();
   update_tension();
   update_length();
   this->position = mass_point.at(0).get_position();
-  this->color = color; 
+  this->color = DEFAULT_COLOR;                                              // color isn't updated till set color is called 
+
+  // set extremes constraint based on left and right ropes constraint
   set_constraint(0, a);
   set_constraint(point_number - 1, b);
 }
@@ -291,7 +307,10 @@ Rope::builder(unsigned int point_number, float mass, float tension,
   this->b = b;
   this->color = color;
 
+  // construct all masses
   this->mass_point = mass_builder();
+
+  // construct all springs
   this->spring = spring_builder();
 }
 
@@ -440,6 +459,7 @@ Rope::set_x_sliding(bool x)
     mass_point.at(i).set_constraint(!x, mass_point.at(i).get_constraint().y);
 }
 
+// pass all masses of rope to gravity
 void 
 Rope::add_gravity(Gravity* gravity) {gravity->add(&mass_point);} 
 
@@ -467,12 +487,10 @@ Rope::update_tension()
   float force = 0.0f;
 
   for(int i = 0; i < spring.size(); ++i)
-  {
     force  = force * (i / (i+1)) 
            + spring.at(i).get_k() * 
              spring.at(i).get_length() / 
              (i+1);   
-  }
 
   this->tension = force * spring.size();
 }

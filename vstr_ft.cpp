@@ -15,6 +15,7 @@
 void 
 DFT::input(sf::Vector2f position, float time)
 {
+  // input thge position for the give time
   bool check = true;
   for(int i = 0; i<time_data.size(); ++i)
   {
@@ -26,6 +27,7 @@ DFT::input(sf::Vector2f position, float time)
     }
   }
 
+  // if the given time doesn't exist create a new FT_DATA for such a time
   if(check)
   {
     FT_DATA temp;
@@ -49,21 +51,24 @@ DFT::evaluate_at_time(float time, float y0, bool to_normalize, float normal_heig
 {
   std::vector<sf::Vector2f> result;
 
+  // search for the time 
   int i;
   for(i=0; i<time_data.size(); ++i)
     if(time == time_data.at(i).time) break;
   
+  // if time is not found output the FFT at the last newly inputted time
   if(i == time_data.size())
     --i;
 
-  result = evaluate(time_data.at(i).position, DEFAULT_NORMAL_HEIGHT);
+  result = time_data.at(i).position;
+
+  // compute the DFT
+  evaluate(&result);
 
   if(to_normalize)
-  {
-    result = normalize(result );
-  }
+    normalize(&result);
 
-  return result;  
+  return result;
 }
 
 
@@ -71,7 +76,8 @@ std::vector<FT_DATA>
 DFT::evaluate_all_time(float y0, bool to_normalize, float normal_height)
 {
   std::vector<FT_DATA> result;
-  
+
+  // evaluate for all times  
   for(int i=0; i<time_data.size(); ++i)
   {
     FT_DATA temp;
@@ -84,44 +90,50 @@ DFT::evaluate_all_time(float y0, bool to_normalize, float normal_height)
 }
 
 
-std::vector<sf::Vector2f> 
-DFT::evaluate(std::vector<sf::Vector2f> point , float y0)
+void
+DFT::evaluate(std::vector<sf::Vector2f> *point , float y0)
 {
-  if(point.size()%2 == 1)
-    point.pop_back();
+  // if input size is odd, makes it even;
+  if(point->size()%2 == 1)
+    point->pop_back();
 
   std::vector<std::complex<double>> complex_point;
 
-  for(int i = 0; i<point.size(); ++i)
+  // load a complex vector with the input points
+  for(int i = 0; i<point->size(); ++i)
   {
-    std::complex<double> temp(point.at(i).y - y0, 0.0);
+    std::complex<double> temp(point->at(i).y - y0, 0.0);
     complex_point.push_back(temp);
   }
 
-  complex_point = transform(complex_point);
+  // compute the DFT
+  complex_point =  transform(complex_point);
 
+  // load the output with the transform
+  // the first half of point is the fourier transform for a sine 
+  // the second half of point is the fourier transform for a cosine
   for(int i=0; i<complex_point.size()/2; ++i)
   {
-    point.at(i).x *= 2.0;
-    point.at(i).y = y0 - abs(complex_point.at(i).imag());
+    point->at(i).x *= 2.0;
+    point->at(i).y = y0 - abs(complex_point.at(i).imag());
 
-    point.at(i+complex_point.size()/2).x = point.at(i).x;
-    point.at(i+complex_point.size()/2).y = y0 - abs(complex_point.at(i).real());
+    point->at(i+complex_point.size()/2).x = point->at(i).x;
+    point->at(i+complex_point.size()/2).y = y0 - abs(complex_point.at(i).real());
   }
-
-  return point;
 }
 
 
-std::vector<std::complex<double>> 
+std::vector<std::complex<double>>
 DFT::transform(std::vector<std::complex<double>> point)
 {
+  // the sampling step garant that every point is a normal mode of the rope
   double frequency_steps = 0.5;
 
   std::complex i(0.0, 1.0);
 
   std::vector<std::complex<double>> result;
 
+  // matrix vector moltipication of original function and test functions
   for(double k=0.0, frequency = 0.0; k<point.size(); ++k)
   {
     std::complex<double> temp(0.0, 0.0);
@@ -140,50 +152,52 @@ DFT::transform(std::vector<std::complex<double>> point)
 }
 
 
-std::vector<sf::Vector2f> 
-DFT::normalize(std::vector<sf::Vector2f> point, float y0, float normal_height)
+// NOTE: this may cause trouble if used with FFT class. Please test this or let the authors know of possible problems
+void
+DFT::normalize(std::vector<sf::Vector2f> *point, float y0, float normal_height)
 {
 
   float c_pos = 0.0f;
   float s_pos = 0.0f;
 
-for(int i=0; i<point.size(); ++i)
-{
-  float temp = y0 - point.at(i).y;
-  if(i<point.size()/2 && s_pos < temp)
-    s_pos = temp;
-  else if(i >= point.size()/2 && c_pos > temp)
-    c_pos = temp;
-}
+  // search for highest point of both sine and cosine transform
+  for(int i=0; i<point->size(); ++i)
+  {
+    float temp = y0 - point->at(i).y;
+    if(i<point->size()/2 && s_pos < temp)
+      s_pos = temp;
+    else if(i >= point->size()/2 && c_pos > temp)
+      c_pos = temp;
+  }
 
-for(int i=0; i<point.size(); ++i)
-{
-  if(i<point.size()/2)
-    point.at(i).y = (y0 - point.at(i).y) / s_pos;
-  else
-    point.at(i).y = (y0 - point.at(i).y) / c_pos;
+  // scale the height of the points such that the highest is the the top of the window and the other are on scale
+  for(int i=0; i<point->size(); ++i)
+  {
+    if(i<point->size()/2)
+      point->at(i).y = (y0 - point->at(i).y) / s_pos;
+    else
+      point->at(i).y = (y0 - point->at(i).y) / c_pos;
 
-  point.at(i).y = y0 - (point.at(i).y * normal_height);
-}
-
-  return point;
+    point->at(i).y = y0 - (point->at(i).y * normal_height);
+  }
 }
 
 //?______________________________________________________________________________________________________________________________________________________________
 //? FFT
 
-std::vector<sf::Vector2f> 
-FFT::evaluate(std::vector<sf::Vector2f> point)
+void
+FFT::evaluate(std::vector<sf::Vector2f> *point, float y0)
 {
-  float y0 = point.front().y;
-
   std::vector<std::complex<double>> complex_point;
-  for(int i=0; i<point.size(); ++i)
+  
+  // load the complex vector
+  for(int i=0; i<point->size(); ++i)
   {
-    std::complex<double> temp(point.at(i).y - y0, 0);
+    std::complex<double> temp(point->at(i).y - y0, 0);
     complex_point.push_back(temp);
   }
 
+  // if the input size isn't a power of 2, shrink the size to the closest power of two
   {
   int i;
   for(i = 0;; ++i)
@@ -193,31 +207,24 @@ FFT::evaluate(std::vector<sf::Vector2f> point)
       break;
     }
 
-
   while(pow(2,i) < complex_point.size())
     complex_point.pop_back();
   }
 
+  // make sure that the output is also scaled
+  while(complex_point.size() > point->size())
+    point->pop_back();
+
+  // comppute the FFT
   complex_point = transform(complex_point);
 
-  std::vector<sf::Vector2f> result;
-
+  //load the output with the transform
   for(int i=0; i<complex_point.size(); ++i)
   { 
-    sf::Vector2f temp(0.0f,0.0f);
-    temp.y = y0 - sqrt(pow(complex_point.at(i).real(),2)
+    point->at(i).y = y0 - sqrt(pow(complex_point.at(i).real(),2)
                      + pow(complex_point.at(i).imag(),2));
-    temp.x = point.at(i).x;
-    result.push_back(temp);
+    point->at(i).x *= 2;
   }
-
-  for(int i=0; i<complex_point.size()/2; ++i)
-  {
-    point.pop_back();
-    point.at(i).x *= 2.0;
-  }
-
-  return result;
 }
 
 
@@ -229,7 +236,7 @@ FFT::transform(std::vector<std::complex<double>> point)
 
   std::complex<double> i(0.0,1.0);
   std::complex<double> w = exp(2.0 * i * M_PI / static_cast<double>(point.size()));
-
+  
   std::vector<std::complex<double>> odd;
   std::vector<std::complex<double>> even;
 

@@ -18,9 +18,12 @@ int main(int argv, char** argc)
 {
   // GUI
 
+  bool chosen = false;
   std::string shape_name = DEFAULT_CURRENT_FUNCTION;
   float shape_normal_mode = DEFAULT_REPETITIONS;
 
+  while(!chosen)
+  {
   system("clear");
   std::cout << "\t +--------------------------------+" << std::endl
             << "\t --- Vibrating string simulator ---" << std::endl
@@ -32,7 +35,11 @@ int main(int argv, char** argc)
             << "4. triangle" << std::endl
             << "\nType the chosen shape: ";
   std::cin >> shape_name;
-  
+  if(shape_name == "sine" || shape_name == "cosine" || 
+     shape_name == "square" || shape_name == "triangle")
+      chosen = true;
+  }
+
   std::cout << "\n\nWhat normal mode do you want to simulate? ";
   std::cin >> shape_normal_mode;
 

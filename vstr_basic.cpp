@@ -68,18 +68,18 @@ Mass_Point::Mass_Point(float mass,
 void
 Mass_Point::builder(float mass, sf::Vector2f position, sf::Vector2f velocity, Constraint constraint, sf::Color color)
 {
-  // initialization of the sfml object CircleShape
+  // Initialization of the SFML object CircleShape
   point.setRadius(DEFAULT_P_RADIUS);
   point.setPointCount(DEFAULT_C_POINT_COUNT);
   point.setOrigin(DEFAULT_P_RADIUS / 2 , DEFAULT_P_RADIUS / 2);
   point.setPosition(position);
   point.setFillColor(color);
 
-  // initialization of class variables
+  // Initialization of class variables
   this->mass = mass;
   this->velocity = velocity;
   this->constraint = constraint;
-  // setting initial acceleration to 0
+  // Setting initial acceleration to 0
   clear_acceleration();
 }
 
@@ -143,19 +143,19 @@ Mass_Point::set_color(sf::Color color) {this->point.setFillColor(color);}
 void
 Mass_Point::update(float time_increment)
 { 
-  // updating x axys velocity, controlling constraint
+  // Updating x axis velocity while checking for constraints
   if(constraint.x)
     velocity.x = 0.0;
   else
     velocity.x += (acceleration.x * time_increment); 
   
-  // updating y axys velocity, controlling constraint
+  // Updating y axis velocity while checking for constraints
   if(constraint.y)
     velocity.y = 0.0;
   else
     velocity.y += (acceleration.y * time_increment); 
 
-  // updating position
+  // Updating position
   sf::Vector2f new_position = point.getPosition();
   
   new_position.x += velocity.x * (time_increment * LENGHT_UNIT);
@@ -163,7 +163,7 @@ Mass_Point::update(float time_increment)
 
   point.setPosition(new_position);
   
-  // resetting acceleration for the new time step
+  // Resetting acceleration for the new time increment
   clear_acceleration();
 }
 
@@ -248,19 +248,19 @@ Spring::apply()
   sf::Vector2f force;
   sf::Vector2f a1, a2;
 
-  // updating length before force computation 
+  // Updating length before force computation 
   update_length();
   update_vector_length();
 
-  // computing force in the two axys
+  // Computing force on x and y axis
   force.x = (length - rest_length) * k * (vector_length.x / length);
   force.y = (length - rest_length) * k * (vector_length.y / length);
 
-  // computing new acceleration
+  // Computing new acceleration
   a1 = (force / m1->get_mass());
   a2 = ((-force) / m2->get_mass());
 
-  // control of the acceleration sign for the two axys
+  // Checking the acceleration sign on x and y axys
   if(m1->get_position().x > m2->get_position().x)
   {
     a1.x *= (-1); 
@@ -273,7 +273,7 @@ Spring::apply()
     a2.y *= (-1); 
   } 
 
-  // updating the acceleration of the two masses
+  // Updating the acceleration of the two masses
   m1->update_acceleration(a1);
   m2->update_acceleration(a2);
 }

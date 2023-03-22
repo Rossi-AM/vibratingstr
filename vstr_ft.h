@@ -23,24 +23,24 @@ class DFT
 {
   public:
 
-    void input(sf::Vector2f position, float time);                                              // input position for a given time, if time is not foud create a new FT_DATA for that time
+    void input(sf::Vector2f position, float time);                                              // Input position for a given time. If time is not found, create a new FT_DATA for that time
     void input(std::vector<sf::Vector2f> position, float time);
     
     std::vector<sf::Vector2f> evaluate_at_time(float time, 
                                                float y0 = DEFAULT_NORMAL_HEIGHT,
                                                bool to_normalize = DEFAULT_NORMALIZATION, 
-                                               float normal_height = DEFAULT_NORMAL_HEIGHT);    // return the fourier transform at the fiven time
+                                               float normal_height = DEFAULT_NORMAL_HEIGHT);    // Return the Fourier transform at a given time
     std::vector<FT_DATA> evaluate_all_time(float y0 = DEFAULT_NORMAL_HEIGHT,
                                            bool to_normalize = DEFAULT_NORMALIZATION, 
-                                           float normal_height = DEFAULT_NORMAL_HEIGHT);        // return the fourier transform for all saved times
+                                           float normal_height = DEFAULT_NORMAL_HEIGHT);        // Return the Fourier transform for all saved times
 
-    void normalize(std::vector<sf::Vector2f> *point, float y0 = DEFAULT_NORMAL_HEIGHT, float normal_height = DEFAULT_NORMAL_HEIGHT);  // make the output better visualizzable on a sfml window
+    void normalize(std::vector<sf::Vector2f> *point, float y0 = DEFAULT_NORMAL_HEIGHT, float normal_height = DEFAULT_NORMAL_HEIGHT);  // Make the output better viewable on a SFML window
   private:
 
     std::vector<FT_DATA> time_data;
 
-    void evaluate(std::vector<sf::Vector2f> *point, float y0 = DEFAULT_NORMAL_HEIGHT);          // prepare the data for the DFT
-    std::vector<std::complex<double>> transform(std::vector<std::complex<double>> point);       // the DFT algorithm
+    void evaluate(std::vector<sf::Vector2f> *point, float y0 = DEFAULT_NORMAL_HEIGHT);          // Prepare the data for the DFT
+    std::vector<std::complex<double>> transform(std::vector<std::complex<double>> point);       // The DFT algorithm
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
@@ -52,6 +52,6 @@ class FFT : public DFT
 
     std::vector<FT_DATA> time_data;
 
-    void evaluate(std::vector<sf::Vector2f> *point, float y0 = DEFAULT_NORMAL_HEIGHT);          // prepare the data for the FFT
-    std::vector<std::complex<double>>  transform(std::vector<std::complex<double>> point);      // the FFT algorithm by Cooly & Tukey
+    void evaluate(std::vector<sf::Vector2f> *point, float y0 = DEFAULT_NORMAL_HEIGHT);          // Prepare the data for the FFT
+    std::vector<std::complex<double>>  transform(std::vector<std::complex<double>> point);      // The Cooley-Tukey FFT algorithm 
 };

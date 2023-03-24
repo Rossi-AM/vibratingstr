@@ -2,6 +2,15 @@
 //                                     
 // Rossi A. M. - Tambini M.    03/2023 
 // 
+// This main file is responsible for creating
+// and updating an SFML window, whose name
+// depends on the goal (simulation or DFT
+// computation).
+// 
+// User can define the parameters of the 
+// simulation/DFT computation through a
+// basic GUI.
+// 
 
 #include <iostream>
 #include <fstream>
@@ -13,7 +22,7 @@
 #include <SFML/Graphics.hpp>
 #include "vstr_ft.h"
 
-#if FT
+#if FT // A simple trigger to modify the name of the SFML window
   #define window_name "Fourier Analysis"
 #else
   #define window_name "Vibrating string"
@@ -77,7 +86,7 @@ int main(int argv, char** argc)
 
   // Constructing DFT elements
 
-  #if FT
+  #if FT // Compiling with -D FT doesn't show the simulation but its DFT only
 
   float sampling_time = 0.0f;
   float sampling_time_increment = 0.0f;
@@ -97,7 +106,7 @@ int main(int argv, char** argc)
     fourier_transform.push_back(temp);
   }
   
-  #endif
+  #endif // Compiling with -D FT shows only the simulation
 
 
   global_clock.restart();
@@ -109,8 +118,7 @@ int main(int argv, char** argc)
     clock.restart();
 
 
-    // Gathering data for the DFT
-    #ifdef FT
+    #ifdef FT // Gathering data for the DFT, if compiled with -D FT
 
     if(simulation_time >= sampling_time)
     {
@@ -151,12 +159,12 @@ int main(int argv, char** argc)
     // Drawning the results
     window.clear();
     
-    #ifdef FT
+    #ifdef FT // Computing the DFT if compiled with -D FT
     
     for(int i=0; i<fourier_transform.size(); ++i)
       window.draw(fourier_transform.at(i));
 
-    #else
+    #else // Drawing the points on the graphical windows if not compiled with -D FT
 
     for(int i=0; i<rope.size(); ++i)
       window.draw(rope.get_mass(i).point);

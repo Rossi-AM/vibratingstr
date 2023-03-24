@@ -13,11 +13,11 @@
 #include <SFML/Graphics.hpp>
 #include "vstr_advanced.h"
 
-//!______________________________________________________________________________________________________________________________________________________________
-//! class method
+//!________________________________________________________________________________________________________
+//! Class methods
 
 
-//? ________________________________________________________________________________________________________
+//? _______________________________________________________________________________________________________
 //? Linear_Shape
 
 Linear_Shape::Linear_Shape(std::string function_name,
@@ -290,7 +290,7 @@ Rope::Rope(Rope* left, Rope* right)
   update_tension();
   update_length();
   this->position = mass_point.at(0).get_position();
-  this->color = DEFAULT_COLOR;             // color isn't updated until set_color is called 
+  this->color = DEFAULT_COLOR;             // Color isn't updated until set_color is called 
 
   // Set extreme constraints based on left and right ropes constraints
   set_constraint(0, a);

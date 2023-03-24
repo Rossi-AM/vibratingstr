@@ -2,6 +2,16 @@
 //                                     
 // Rossi A. M. - Tambini M.    03/2023 
 // 
+// In this header the basics of the Vibrating
+// string simulator are defined.
+// A Mass_Point element is and ideal mass point,
+// that is connected by String to another mass
+// point.
+// Gravity can be applied by using the Gravity
+// class. Some point can have a Constraint on
+// one, or both, axis (usually the extremes of 
+// the Rope, a class that will be defined in
+// vstr_advanced.h).
 // 
 
 #include <SFML/System.hpp>

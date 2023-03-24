@@ -2,6 +2,14 @@
 //                                     
 // Rossi A. M. - Tambini M.    03/2023 
 // 
+// This header contains the classes used for
+// computing the Discrete Fourier transform (DFT).
+// DFT is a collection of methods working with A
+// FT_DATA data type. 
+// FFT is a method for computing the Fast Fourier
+// Transform, that inherits most of its methods
+// from DFT. 
+// 
 
 #include <complex>
 #include <SFML/System.hpp>
@@ -12,7 +20,7 @@
 #define DEFAULT_NORMAL_HEIGHT 400.0f
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? FFT data time: store the shape of the rope at a give time
+//? FFT data time: store the shape of the rope at a given time
 
 struct FT_DATA
 {
@@ -22,7 +30,7 @@ struct FT_DATA
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? DFT: class for calculating the discrete fourier transform of the rope (every point represent a normal mode of the rope)
+//? DFT: class for calculating the discrete fourier transform of the rope (every point represents a normal mode of the rope)
 
 class DFT
 {
@@ -49,7 +57,7 @@ class DFT
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? FFT: class for computing the fast fourier transform of the rope (every point represent a even normal mode of the rope)
+//? FFT: class for computing the fast fourier transform of the rope (every point represents a even normal mode of the rope)
 
 class FFT : public DFT
 {  

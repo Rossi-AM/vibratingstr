@@ -1,3 +1,17 @@
+
+//                                     
+// Rossi A. M. - Tambini M.    03/2023 
+// 
+// In this header the classes Linear_Data, Linear_Shape
+// and Rope are defined. 
+// They inherit from the classes included in vstr_basic.h,
+// and their goal is to create a Rope from a set of
+// Mass_Point (vstr_basic), connected by multiple String
+// (vstr_basic) and model them as a Linear_Shape,
+// whose parameters are defined by Linear_Data.
+// Rope can be connected to another Rope.
+//
+
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include "vstr_basic.h"

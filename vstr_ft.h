@@ -1,3 +1,8 @@
+
+//                                     
+// Rossi A. M. - Tambini M.    03/2023 
+// 
+
 #include <complex>
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>

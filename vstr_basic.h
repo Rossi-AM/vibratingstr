@@ -1,3 +1,9 @@
+
+//                                     
+// Rossi A. M. - Tambini M.    03/2023 
+// 
+// 
+
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -20,7 +26,7 @@
 //! class declarations
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? constraint
+//? Constraint
 
 
 class Constraint
@@ -33,7 +39,7 @@ class Constraint
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? mass point: secribe an ideal point mass
+//? Mass point: Describe an ideal mass point
 
 
 class Mass_Point
@@ -103,7 +109,7 @@ class Mass_Point
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? gravity: classical gravity toward down with acceleration g = 9.80665  
+//? Gravity: classical gravity towards the ground, with acceleration g = 9.80665  
 
 class Gravity
 {
@@ -126,7 +132,7 @@ class Gravity
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? spring: ideal massless spring
+//? Spring: ideal massless spring
 
 class Spring
 {

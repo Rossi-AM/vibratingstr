@@ -1,17 +1,14 @@
-
-//                                     
-// Rossi A. M. - Tambini M.    03/2023 
-// 
-// In this header the basics of the Vibrating
-// string simulator are defined.
-// A Mass_Point element is and ideal mass point,
-// that is connected by String to another mass
-// point.
-// Gravity can be applied by using the Gravity
-// class. Some point can have a Constraint on
-// one, or both, axis (usually the extremes of 
-// the Rope, a class that will be defined in
-// vstr_advanced.h).
+//
+// 03/2023
+//                  
+// Rossi A. M.:  alessandromatteo.rossi@studenti.unimi.it
+// Tambini M. :  marco.tambini@studenti.unimi.it
+//  
+// vstr_basic.* contain the basic classes
+// for a physical simulation. 
+// The elements are ideal masses, ideal 
+// springs, gravity and positional
+// constraints.
 // 
 
 #include <SFML/System.hpp>
@@ -36,7 +33,7 @@
 //! class declarations
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? Constraint
+//? Constraint: a positional constraint for a mass point
 
 
 class Constraint
@@ -49,7 +46,7 @@ class Constraint
 };
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? Mass point: Describe an ideal mass point
+//? Mass point: describes an ideal mass point
 
 
 class Mass_Point
@@ -79,7 +76,7 @@ class Mass_Point
 
 
 
-    void clear_acceleration();                              // Set acceleration value at 0 (it'll be used whenever there's no jerk, so, everytime)
+    void clear_acceleration();                              // Set acceleration value to 0 whenever there's no jerk
     void update_acceleration(sf::Vector2f acceleration);    // Add the input acceleration to the existing acceleration
 
     float get_mass();                                       // Return mass value
@@ -156,7 +153,7 @@ class Spring
     float get_k();                                           // Return the spring elastic constant
     float get_length();                                      // Return the current length of the spring
 
-    void apply();                                            // Rpdate the acceleration of the two masses to which the spring is linked
+    void apply();                                            // Update the acceleration of the two masses to which the spring is linked
 
   private: 
     

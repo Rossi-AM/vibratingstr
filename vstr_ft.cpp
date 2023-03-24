@@ -1,7 +1,9 @@
-
-//                                     
-// Rossi A. M. - Tambini M.    03/2023 
-// 
+//
+// 03/2023
+//                  
+// Rossi A. M.:  alessandromatteo.rossi@studenti.unimi.it
+// Tambini M. :  marco.tambini@studenti.unimi.it
+//  
 
 #include <iostream>
 #include <fstream>

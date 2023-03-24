@@ -1,7 +1,9 @@
-
-//                                     
-// Rossi A. M. - Tambini M.    03/2023 
-// 
+//
+// 03/2023
+//                  
+// Rossi A. M.:  alessandromatteo.rossi@studenti.unimi.it
+// Tambini M. :  marco.tambini@studenti.unimi.it
+//  
 
 #include <iostream>
 #include <fstream>
@@ -14,10 +16,10 @@
 #include "vstr_basic.h"
 
 //!______________________________________________________________________________________________________________________________________________________________
-//! class method
+//! Class method
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? constraint
+//? Constraint
 
 Constraint::Constraint()
 {
@@ -32,7 +34,7 @@ Constraint::Constraint(bool x, bool y)
 }
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? mass point
+//? Mass point 
 
 Mass_Point::Mass_Point(float mass, 
                        sf::Vector2f position, 
@@ -134,10 +136,10 @@ Mass_Point::set_constraint(Constraint constraint) {this->constraint = constraint
 
 void 
 Mass_Point::set_constraint(bool x, bool y)
-      {
-        this->constraint.x = x; 
-        this->constraint.y = y;
-      };
+{
+  this->constraint.x = x; 
+  this->constraint.y = y;
+};
 
 Constraint 
 Mass_Point::get_constraint() {return constraint;}
@@ -174,7 +176,7 @@ Mass_Point::update(float time_increment)
 
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? gravity
+//? Gravity
 
 Gravity::Gravity(std::vector<Mass_Point>* mass_point)
 {
@@ -216,7 +218,7 @@ Gravity::apply()
 }
 
 //?______________________________________________________________________________________________________________________________________________________________
-//? spring
+//? Spring
 
 Spring::Spring(float k, Mass_Point* m1, Mass_Point* m2, int rest_length) 
 {builder(k, m1, m2, rest_length = DEFAULT_REST_L);}

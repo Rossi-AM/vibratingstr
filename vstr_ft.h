@@ -1,14 +1,14 @@
-
-//                                     
-// Rossi A. M. - Tambini M.    03/2023 
-// 
-// This header contains the classes used for
-// computing the Discrete Fourier transform (DFT).
-// DFT is a collection of methods working with A
-// FT_DATA data type. 
-// FFT is a method for computing the Fast Fourier
-// Transform, that inherits most of its methods
-// from DFT. 
+//
+// 03/2023
+//                  
+// Rossi A. M.:  alessandromatteo.rossi@studenti.unimi.it
+// Tambini M. :  marco.tambini@studenti.unimi.it
+//  
+// vstr_ft.* contain the classes used for
+// data analysis.
+// The elements are a DFT (Discrete Fourier 
+// Transform) and a FFT (Fast Fourier Transform)
+// class.
 // 
 
 #include <complex>

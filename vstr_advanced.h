@@ -1,15 +1,14 @@
-
-//                                     
-// Rossi A. M. - Tambini M.    03/2023 
-// 
-// In this header the classes Linear_Data, Linear_Shape
-// and Rope are defined. 
-// They inherit from the classes included in vstr_basic.h,
-// and their goal is to create a Rope from a set of
-// Mass_Point (vstr_basic), connected by multiple String
-// (vstr_basic) and model them as a Linear_Shape,
-// whose parameters are defined by Linear_Data.
-// Rope can be connected to another Rope.
+//
+// 03/2023
+//                  
+// Rossi A. M.:  alessandromatteo.rossi@studenti.unimi.it
+// Tambini M. :  marco.tambini@studenti.unimi.it
+//  
+// vstr_advanced.* contain auxiliary classes
+// for a vibrating string simulation.
+// The elements are Rope and Linear_Shape,
+// which includes the struct Linear_Data
+// as its own data type.
 //
 
 #include <SFML/System.hpp>
@@ -59,7 +58,7 @@ class Linear_Shape
 
   void set_amplitude(float amplitude);                                                    // Set the amplitude to the input amplitude (if x<0 set 0, if x>1 set 1)
   void set_repetitions(float repetitions);                                                // Set the repetitions to the input repetitions
-  void set_width(float width);                                                            // Set the width to the input width
+  void set_width(float width);                                                            // Set the width to the input width (if x<0 set 0, if x>1 set 1)
 
   void add_function(std::string name, linear_method foo);                                 // Add a new initialization function passed as argument
 

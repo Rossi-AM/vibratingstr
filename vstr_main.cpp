@@ -1,12 +1,15 @@
-
-//                                     
-// Rossi A. M. - Tambini M.    03/2023 
-// 
-// This main file is responsible for creating
-// and updating an SFML window, whose name
-// depends on the goal (simulation or DFT
-// computation).
-// 
+//
+// 03/2023
+//                  
+// Rossi A. M.:  alessandromatteo.rossi@studenti.unimi.it
+// Tambini M. :  marco.tambini@studenti.unimi.it
+//  
+// Program to simulate a vibrating string,
+// show it on a sfml window and, if
+// compiled with the flag -D FT,
+// show the Fourier transform of
+// the rope oscillational mode.
+//  
 // User can define the parameters of the 
 // simulation/DFT computation through a
 // basic GUI.
@@ -18,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <strings.h>
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include "vstr_ft.h"
@@ -49,6 +53,7 @@ int main(int argv, char** argc)
             << "4. triangle" << std::endl
             << "\nType the chosen shape: ";
   std::cin >> shape_name;
+  
   if(shape_name == "sine" || shape_name == "cosine" || 
      shape_name == "square" || shape_name == "triangle")
       chosen = true;
